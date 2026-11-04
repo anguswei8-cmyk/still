@@ -1,0 +1,10 @@
+{
+  "source": "assets/still.svg",
+  "generator": "scripts/generate-logo.ps1",
+  "method": "Project-authored geometric vector, rasterized with matching System.Drawing paths; no stock or third-party assets",
+  "outputs": ["assets/still.png", "assets/still.ico", "assets/still.icns"],
+  "purpose": "Still application, window, taskbar and system tray icon",
+  "palette": {"graphite": "#454b57", "white": "#ffffff", "silver": "#d9e3f5"},
+  "revision": "Existing authored viewfinder-and-sheet geometry retained; graphite and silver recolor only; no AI-generated or stock imagery",
+  "provenance": "Source sidecar for the SVG-derived PNG, ICO and ICNS outputs; does not assert embedded raster metadata"
+}
