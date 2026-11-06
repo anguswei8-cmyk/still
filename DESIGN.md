@@ -241,7 +241,7 @@ Windows 主窗口与关闭贴图提示使用 `Microsoft YaHei UI`；其他平台
 
 ### Clipboard List and Preview
 
-标题与两行摘要清楚分层，时间右对齐。选中或悬停时显示复制、固定和删除三个居中按钮。已固定条目的固定按钮始终可见。列表上下与左右逐项选择，搜索上下逐项。Ctrl+C、Delete、空格、右键和三种 Enter 动作保持。
+标题与两行摘要清楚分层，时间右对齐。选中或悬停时显示复制、固定和删除三个居中按钮。已固定条目的固定按钮始终可见。搜索框聚焦时隐藏条目选中底色、选中标记及仅因选中而显示的操作，保留当前条目；搜索框上下键进入列表导航并恢复高亮。列表上下与左右逐项选择。Ctrl+C、Delete、空格、右键和三种 Enter 动作保持。
 
 预览默认关闭，打开后延迟读取选中内容，离页、隐藏或销毁取消过期读取。文字只读可选择，图片按设备像素比等比显示；缩略图不超过（128×96px）、PNG（17000 bytes）、base64 小于（24000 字符），索引边界（2000 条／64MiB）；原始内容不改写。`UiImages` 只持有程序图标、缩略图及一个选中原图。
 
@@ -253,9 +253,9 @@ Windows 主窗口与关闭贴图提示使用 `Microsoft YaHei UI`；其他平台
 
 ### History and Identity
 
-历史缩略图保持比例，继续编辑、贴图、删除、清空、目录与分批加载保持；存储状态在当前弹层可见。面向用户统一“拾影 / Still”，内部 PixClone target、URI、组织、数据目录和实例标识保持兼容。
+历史缩略图保持比例，继续编辑、贴图、删除、清空、目录与分批加载保持；存储状态在当前弹层可见。面向用户统一“拾影 / Still”，构建目标、命名空间、URI、组织名和实例标识统一使用 Still；兼容读取旧数据目录和归档标记。
 
-标志源为 `assets/still.svg`，项目自绘几何取景框与一页，保留轮廓，石墨底、白色主体、银色角。`scripts/generate-logo.ps1` 生成 PNG、七尺寸 ICO 与 ICNS；出处在 `assets/still.png.json`。验证方法见 `README.md`。
+标志源为 `assets/still.svg`，项目自绘 S 字母与四角取景框，石墨渐变底、银白主体；macOS 状态栏使用独立的透明底单色模板 `assets/still-tray.png`。`scripts/generate-logo.ps1` 生成 PNG、七尺寸 ICO 与 ICNS；出处在 `assets/still.png.json`。验证方法见 `README.md`。
 
 ## Do's and Don'ts
 
