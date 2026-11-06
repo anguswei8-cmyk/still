@@ -345,9 +345,14 @@ void Overlay::keyPressEvent(QKeyEvent *event) {
                 }
                 selection_ = logicalSelection(pixels);
             } else {
-                if (event->modifiers() & Qt::AltModifier) selection_.translate(delta);
-                else selection_.setBottomRight(selection_.bottomRight() + delta);
-                selection_ = selection_.normalized().intersected(QRectF(rect()));
+                if (event->modifiers() & Qt::AltModifier) {
+                    selection_.translate(delta);
+                    selection_.moveLeft(qBound(0.0, selection_.left(), width() - selection_.width()));
+                    selection_.moveTop(qBound(0.0, selection_.top(), height() - selection_.height()));
+                } else {
+                    selection_.setBottomRight(selection_.bottomRight() + delta);
+                    selection_ = selection_.normalized().intersected(QRectF(rect()));
+                }
             }
             placeToolbar();
         }

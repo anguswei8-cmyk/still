@@ -563,6 +563,30 @@ private slots:
         QCOMPARE(accepted.first()[1].toRectF(), QRectF(60, 60, 1, 80));
         QCOMPARE(qvariant_cast<QImage>(accepted.first()[0]), image.copy(60, 60, 1, 80));
     }
+    void overlayFreeRatioKeyboardMoveStopsAtBoundary_data() {
+        QTest::addColumn<QRect>("region");
+        QTest::addColumn<int>("horizontal");
+        QTest::addColumn<int>("vertical");
+        QTest::addColumn<QRect>("expected");
+        QTest::newRow("top-left") << QRect(3, 4, 160, 90) << int(Qt::Key_Left) << int(Qt::Key_Up) << QRect(0, 0, 160, 90);
+        QTest::newRow("bottom-right") << QRect(477, 386, 160, 90) << int(Qt::Key_Right) << int(Qt::Key_Down) << QRect(480, 390, 160, 90);
+    }
+    void overlayFreeRatioKeyboardMoveStopsAtBoundary() {
+        QFETCH(QRect, region); QFETCH(int, horizontal); QFETCH(int, vertical); QFETCH(QRect, expected);
+        const auto image = coordinateImage(QSize(640, 480));
+        auto *overlay = new Overlay({image, QRect(0, 0, 640, 480), {}}, "annotate", false);
+        overlay->show(); QSignalSpy accepted(overlay, &Overlay::accepted);
+        QTest::mousePress(overlay, Qt::LeftButton, {}, region.topLeft());
+        const QPoint end = region.topLeft() + QPoint(region.width(), region.height());
+        QTest::mouseMove(overlay, end); QTest::mouseRelease(overlay, Qt::LeftButton, {}, end);
+        for (int i = 0; i < 2; ++i) {
+            QTest::keyClick(overlay, Qt::Key(horizontal), Qt::AltModifier | Qt::ShiftModifier);
+            QTest::keyClick(overlay, Qt::Key(vertical), Qt::AltModifier | Qt::ShiftModifier);
+        }
+        overlay->findChild<QToolButton *>("captureAction-copy")->click();
+        QCOMPARE(accepted.size(), 1); QCOMPARE(accepted.first()[1].toRectF(), QRectF(expected));
+        QCOMPARE(qvariant_cast<QImage>(accepted.first()[0]), image.copy(expected));
+    }
     void overlaySizeInputsFollowHandlesAndKeyboard() {
         auto *overlay = new Overlay({whiteImage(640), QRect(0, 0, 640, 150), {}}, "annotate", false); overlay->show();
         QSignalSpy accepted(overlay, &Overlay::accepted);
