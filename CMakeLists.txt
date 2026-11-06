@@ -107,6 +107,42 @@ if(BUILD_TESTING)
     add_test(NAME still_delay COMMAND still_delay_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_delay-results.txt,txt")
     set_tests_properties(still_delay PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
+    qt_add_executable(still_startup_task_tests tests/startup_task_test.cpp src/platform/startup_task.cpp src/platform/startup_task.h)
+    target_link_libraries(still_startup_task_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_startup_task COMMAND still_startup_task_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_startup_task-results.txt,txt")
+    set_tests_properties(still_startup_task PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    if(APPLE)
+        set_source_files_properties(tests/startup_move_native_test.cpp PROPERTIES LANGUAGE OBJCXX)
+        qt_add_executable(still_startup_move_tests tests/startup_move_native_test.cpp src/platform/startup_mac.mm src/platform/startup.h)
+        target_link_libraries(still_startup_move_tests PRIVATE still_core Qt6::Test "-framework Foundation" "-framework ServiceManagement")
+        target_compile_options(still_startup_move_tests PRIVATE "$<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>")
+        add_test(NAME still_mac_startup_move COMMAND still_startup_move_tests -o "${CMAKE_CURRENT_BINARY_DIR}/startup-move-results.txt,txt")
+        set_tests_properties(still_mac_startup_move PROPERTIES LABELS integration RUN_SERIAL TRUE)
+        set_source_files_properties(tests/startup_native_test.cpp PROPERTIES LANGUAGE OBJCXX)
+        qt_add_executable(still_startup_native_tests MACOSX_BUNDLE tests/startup_native_test.cpp
+            src/platform/startup_mac.mm src/platform/startup.h)
+        target_link_libraries(still_startup_native_tests PRIVATE still_core Qt6::Test "-framework ServiceManagement")
+        target_compile_options(still_startup_native_tests PRIVATE "$<$<COMPILE_LANGUAGE:OBJCXX>:-fobjc-arc>")
+        set_target_properties(still_startup_native_tests PROPERTIES MACOSX_BUNDLE_GUI_IDENTIFIER local.still.startup-regression
+            MACOSX_BUNDLE_BUNDLE_NAME still_startup_native_tests
+            MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/native/StartupTest-Info.plist.in")
+        if(NOT CMAKE_GENERATOR STREQUAL "Xcode")
+            set_property(TARGET still_startup_native_tests APPEND PROPERTY LINK_DEPENDS "$<TARGET_BUNDLE_DIR:still_startup_native_tests>/Contents/Info.plist")
+            add_custom_command(TARGET still_startup_native_tests POST_BUILD COMMAND /usr/bin/codesign --force --sign - "$<TARGET_BUNDLE_DIR:still_startup_native_tests>" VERBATIM)
+        endif()
+        add_test(NAME still_mac_startup COMMAND still_startup_native_tests -o "${CMAKE_CURRENT_BINARY_DIR}/startup-native-results.txt,txt")
+        set_tests_properties(still_mac_startup PROPERTIES LABELS integration RUN_SERIAL TRUE)
+    endif()
+
+    if(WIN32)
+            qt_add_executable(still_windows_startup_tests tests/startup_windows_test.cpp
+                src/platform/startup_win.cpp src/platform/startup_win.h src/platform/startup_task.cpp src/platform/startup_task.h)
+            target_link_libraries(still_windows_startup_tests PRIVATE still_core Qt6::Test taskschd ole32 oleaut32 advapi32 uuid)
+            add_test(NAME still_windows_startup COMMAND still_windows_startup_tests -o "${CMAKE_CURRENT_BINARY_DIR}/windows-startup-results.txt,txt")
+            set_tests_properties(still_windows_startup PROPERTIES LABELS integration RUN_SERIAL TRUE)
+    endif()
+
     qt_add_executable(still_tests tests/core_test.cpp)
     target_link_libraries(still_tests PRIVATE still_core Qt6::Test)
     add_test(NAME still_core COMMAND still_tests -o "${CMAKE_CURRENT_BINARY_DIR}/core-results.txt,txt")
