@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QScreen>
+#include <QPixmap>
 #include <QOperatingSystemVersion>
 #include <QTemporaryDir>
 
@@ -53,27 +54,28 @@ bool pasteToTarget(quintptr target, QString *error) {
 OcrResult recognizeNative(const QImage &image, const QString &language) {
     QTemporaryDir directory;
     const QString path = directory.filePath("image.png");
-    if (!directory.isValid() || !image.save(path, "PNG")) return {{}, t("无法写入 OCR 临时图片")};
+    if (!directory.isValid() || !image.save(path, "PNG")) return {{}, {}, t("无法写入 OCR 临时图片")};
     const QString script = QDir(QCoreApplication::applicationDirPath()).filePath("native/Invoke-Ocr.ps1");
-    if (!QFileInfo::exists(script)) return {{}, t("缺少 native/Invoke-Ocr.ps1，请重新构建或部署应用")};
+    if (!QFileInfo::exists(script)) return {{}, {}, t("缺少 native/Invoke-Ocr.ps1，请重新构建或部署应用")};
     QProcess process;
     process.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
         args->flags |= CREATE_NO_WINDOW;
     });
     process.start("powershell.exe", {"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script,
                                      "-ImagePath", QDir::toNativeSeparators(path), "-Lang", language});
-    if (!process.waitForStarted(5000)) return {{}, t("无法启动 Windows OCR：") + process.errorString()};
+    if (!process.waitForStarted(5000)) return {{}, {}, t("无法启动 Windows OCR：") + process.errorString()};
     if (!process.waitForFinished(20000)) {
         process.kill();
         process.waitForFinished();
-        return {{}, t("OCR 超时，请缩小图片后重试")};
+        return {{}, {}, t("OCR 超时，请缩小图片后重试")};
     }
     const QByteArray output = process.readAllStandardOutput().trimmed();
-    if (process.exitStatus() != QProcess::NormalExit || output.isEmpty()) return {{}, t("Windows OCR 失败：") + QString::fromLocal8Bit(process.readAllStandardError()).left(300)};
+    if (process.exitStatus() != QProcess::NormalExit || output.isEmpty()) return {{}, {}, t("Windows OCR 失败：") + QString::fromLocal8Bit(process.readAllStandardError()).left(300)};
     return parseOcr(output, image.size());
 }
 
 bool requestCapturePermission() { return true; }
+QImage captureScreen(QScreen *screen) { return screen->grabWindow(0).toImage(); }
 
 QVector<QRect> windowRectangles(QScreen *screen) {
     struct Context { QScreen *screen; QRect physical; QVector<QRect> rectangles; } context{screen, {}, {}};

@@ -34,6 +34,22 @@ public:
             p->drawLine(QPointF(13, 7), QPointF(17, 11));
         };
         switch (icon_) {
+        case ToolIcon::Crop:
+            p->drawPolyline(QPolygonF{QPointF(6, 3), QPointF(6, 18), QPointF(21, 18)});
+            p->drawPolyline(QPolygonF{QPointF(3, 6), QPointF(18, 6), QPointF(18, 21)}); break;
+        case ToolIcon::FlipHorizontal:
+        case ToolIcon::FlipVertical:
+            if (icon_ == ToolIcon::FlipVertical) { p->translate(12, 12); p->rotate(90); p->translate(-12, -12); }
+            p->drawLine(QPointF(12, 3), QPointF(12, 7)); p->drawLine(QPointF(12, 17), QPointF(12, 21));
+            p->drawLine(QPointF(3, 12), QPointF(21, 12));
+            p->drawPolyline(QPolygonF{QPointF(7, 8), QPointF(3, 12), QPointF(7, 16)});
+            p->drawPolyline(QPolygonF{QPointF(17, 8), QPointF(21, 12), QPointF(17, 16)}); break;
+        case ToolIcon::Select:
+            p->drawPolygon(QPolygonF{QPointF(5, 3), QPointF(5, 21), QPointF(10, 16), QPointF(14, 22), QPointF(17, 20), QPointF(13, 14), QPointF(21, 14)}); break;
+        case ToolIcon::QuickSave:
+            p->drawPolyline(QPolygonF{QPointF(4, 15), QPointF(4, 20), QPointF(20, 20), QPointF(20, 15)});
+            p->drawLine(QPointF(12, 3), QPointF(12, 15));
+            p->drawPolyline(QPolygonF{QPointF(7, 10), QPointF(12, 15), QPointF(17, 10)}); break;
         case ToolIcon::Minimize: p->drawLine(QPointF(5, 12), QPointF(19, 12)); break;
         case ToolIcon::Maximize: p->drawRoundedRect(QRectF(5, 5, 14, 14), 1, 1); break;
         case ToolIcon::Restore:
@@ -209,10 +225,14 @@ QString toolbarStyleSheet() {
         #CaptureTools QToolButton:checked { background: #e2e6ed; }
         #CaptureTools QToolButton:focus { border-color: #454b57; }
         #CaptureTools QToolButton:disabled { background: transparent; }
+        #CaptureTools QToolButton#ImageTransforms { min-width: 32px; max-width: 32px; }
         QToolBar#CaptureTools::separator { background: #d9dde5; width: 1px; margin: 5px 6px; }
         #CaptureTools QFrame[role="separator"] { background: #d9dde5; border: none; }
-        #CaptureTools QSpinBox { background: #fff; color: #242731; border: 1px solid #d9dde5; border-radius: 5px; padding: 5px; selection-background-color: #e2e6ed; }
+        #CaptureTools QSpinBox { background: #fff; color: #242731; border: 1px solid #d9dde5; border-radius: 5px; padding: 5px; selection-background-color: #e2e6ed; selection-color: #242731; }
         #CaptureTools QSpinBox:focus { border-color: #454b57; }
+        #CaptureTools QSpinBox:disabled { background: #f4f5f7; color: #858e9e; }
+        #CaptureTools QComboBox#CaptureAspectRatio { background: #fff; color: #242731; border: 1px solid #d9dde5; border-radius: 5px; padding: 5px; }
+        #CaptureTools QComboBox#CaptureAspectRatio:focus { border-color: #454b57; }
     )");
     return QStringLiteral(R"(
         QWidget#CaptureTools { background: #1c1c1c; color: #ededed; border: 1px solid #383838; border-radius: 7px; }
@@ -223,10 +243,14 @@ QString toolbarStyleSheet() {
         #CaptureTools QToolButton:checked { background: #292929; }
         #CaptureTools QToolButton:focus { border-color: #a8a8a8; }
         #CaptureTools QToolButton:disabled { background: transparent; }
+        #CaptureTools QToolButton#ImageTransforms { min-width: 32px; max-width: 32px; }
         QToolBar#CaptureTools::separator { background: #383838; width: 1px; margin: 5px 6px; }
         #CaptureTools QFrame[role="separator"] { background: #383838; border: none; }
         #CaptureTools QSpinBox { background: #1c1c1c; color: #ededed; border: 1px solid #383838; border-radius: 5px; padding: 5px; selection-background-color: #292929; }
         #CaptureTools QSpinBox:focus { border-color: #a8a8a8; }
+        #CaptureTools QSpinBox:disabled { background: #1c1c1c; color: #898989; }
+        #CaptureTools QComboBox#CaptureAspectRatio { background: #1c1c1c; color: #ededed; border: 1px solid #383838; border-radius: 5px; padding: 5px; }
+        #CaptureTools QComboBox#CaptureAspectRatio:focus { border-color: #a8a8a8; }
     )");
 }
 

@@ -6,6 +6,7 @@ import QtQuick.Layouts
 Pane {
     id: root
     objectName: "QmlShell"
+    readonly property bool customTitleBar: Qt.platform.os === "windows"
     readonly property real captureClearance: captureButton.height + 12
     component WindowButton: UiButton {
         implicitWidth: 34
@@ -14,6 +15,26 @@ Pane {
         rightPadding: leftPadding
         quiet: true
         activeFocusOnTab: false
+    }
+    component NavigationButton: UiButton {
+        id: control
+        implicitHeight: 42
+        quiet: true
+        contentItem: RowLayout {
+            spacing: 10
+            Image {
+                source: "image://content/icon/" + control.glyph + (control.checked ? "-active" : "") + (Theme.dark ? "-dark" : "")
+                sourceSize: Qt.size(36, 36)
+                Layout.preferredWidth: 18; Layout.preferredHeight: 18
+            }
+            Text {
+                text: control.text; textFormat: Text.PlainText; elide: Text.ElideRight
+                font.family: Theme.fontFamily; font.pixelSize: 13; font.weight: control.checked ? Font.DemiBold : Font.Normal
+                color: control.checked ? Theme.navInk : Theme.navMuted
+                Layout.fillWidth: true
+            }
+        }
+        background: Rectangle { radius: 6; color: control.checked ? Theme.navSelected : control.hovered ? Theme.hover : "transparent"; border.color: control.visualFocus ? Theme.focus : "transparent" }
     }
     padding: 0
     font.family: Theme.fontFamily
@@ -54,14 +75,15 @@ Pane {
     }
     background: Rectangle { radius: backend.maximized ? 0 : 12; color: backend.glassAvailable ? (Theme.dark ? "#e6181818" : "#c7f4f5f7") : Theme.canvas }
     Rectangle { width: 176; height: root.height; color: backend.glassAvailable ? Theme.navigationGlass : Theme.sidebar }
-    Rectangle { x: 176; y: 48; width: root.width - 176; height: root.height - 48; color: backend.glassAvailable ? (Theme.dark ? "#f21c1c1c" : "#f2ffffff") : Theme.surface }
+    Rectangle { x: 176; y: root.customTitleBar ? chrome.height : 0; width: root.width - 176; height: root.height - y; color: backend.glassAvailable ? (Theme.dark ? "#f21c1c1c" : "#f2ffffff") : Theme.surface }
 
     Item {
         id: chrome
-        width: parent.width
+        width: root.customTitleBar ? parent.width : 176
         height: 48
         MouseArea {
             anchors.fill: parent
+            enabled: root.customTitleBar
             acceptedButtons: Qt.LeftButton
             onPressed: backend.moveWindow()
             onDoubleClicked: backend.toggleMaximized()
@@ -80,7 +102,7 @@ Pane {
             }
             Item { Layout.fillWidth: true }
             RowLayout {
-                visible: Qt.platform.os === "windows"
+                visible: root.customTitleBar
                 Layout.rightMargin: 8
                 spacing: 0
                 WindowButton { objectName: "WindowMinimize"; glyph: "minimize"; ToolTip.text: qsTranslate("Still", "最小化"); onClicked: backend.showMinimized() }
@@ -97,7 +119,7 @@ Pane {
         }
     }
     RowLayout {
-        anchors.top: chrome.bottom
+        anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: parent.width
         spacing: 0
@@ -106,14 +128,16 @@ Pane {
             Layout.minimumWidth: 176
             Layout.maximumWidth: 176
             Layout.fillHeight: true
-            Layout.topMargin: 18
+            Layout.topMargin: chrome.height + 18
             Layout.bottomMargin: 20
             spacing: 12
-            UiButton {
+            NavigationButton {
                 objectName: "BackToLibrary"
                 visible: root.preferences
-                Layout.fillWidth: true; Layout.leftMargin: 12; Layout.rightMargin: 12
-                quiet: true; glyph: "back"
+                Layout.fillWidth: true
+                Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.bottomMargin: 6
+                implicitHeight: 36
+                glyph: "back"
                 text: qsTranslate("Still", "返回内容")
                 onClicked: { backend.page = root.lastLibraryPage; nav.forceActiveFocus(); }
             }
@@ -136,30 +160,14 @@ Pane {
                         event.accepted = true;
                     }
                 }
-                delegate: UiButton {
-                    id: entry
+                delegate: NavigationButton {
                     required property int index
                     required property var modelData
                     objectName: modelData.page < 0 ? "NavigationPinned" : "Navigation" + modelData.page
-                    width: nav.width; height: 42
-                    quiet: true
+                    width: nav.width
                     checked: nav.currentIndex === index
                     text: modelData.text
-                    contentItem: RowLayout {
-                        spacing: 10
-                        Image {
-                            source: "image://content/icon/" + entry.modelData.icon + (entry.checked ? "-active" : "") + (Theme.dark ? "-dark" : "")
-                            sourceSize: Qt.size(36, 36)
-                            Layout.preferredWidth: 18; Layout.preferredHeight: 18
-                        }
-                        Text {
-                            text: entry.text; textFormat: Text.PlainText; elide: Text.ElideRight
-                            font.family: Theme.fontFamily; font.pixelSize: 13; font.weight: entry.checked ? Font.DemiBold : Font.Normal
-                            color: entry.checked ? Theme.navInk : Theme.navMuted
-                            Layout.fillWidth: true
-                        }
-                    }
-                    background: Rectangle { radius: 6; color: entry.checked ? Theme.navSelected : entry.hovered ? Theme.hover : "transparent"; border.color: entry.visualFocus ? Theme.focus : "transparent" }
+                    glyph: modelData.icon
                     onClicked: { root.navigate(modelData.page); nav.forceActiveFocus(); }
                 }
             }
@@ -182,7 +190,7 @@ Pane {
         }
         ColumnLayout {
             Layout.fillWidth: true; Layout.fillHeight: true; Layout.margins: 24
-            Layout.topMargin: 12
+            Layout.topMargin: (root.customTitleBar ? chrome.height : 0) + 12
             Layout.minimumWidth: 0
             spacing: 12
             RowLayout {

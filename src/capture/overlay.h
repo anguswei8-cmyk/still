@@ -1,18 +1,24 @@
 #pragma once
 
+#include "storage/region_presets.h"
 #include <QImage>
+#include <QPointer>
+#include <QScreen>
 #include <QWidget>
+
+class QComboBox;
+class QSpinBox;
 
 namespace still {
 
-struct CaptureFrame { QImage image; QRect geometry; QVector<QRect> windows; };
+struct CaptureFrame { QImage image; QRect geometry; QVector<QRect> windows; QPointer<QScreen> screen; RegionScreen screenInfo; };
 
 class Overlay : public QWidget {
     Q_OBJECT
 public:
     Overlay(CaptureFrame frame, QString mode, bool magnifier);
 signals:
-    void accepted(const QImage &image, const QRect &globalRegion, const QString &action);
+    void accepted(const QImage &image, const QRectF &localRegion, const QString &action);
     void cancelled();
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -34,9 +40,17 @@ private:
     bool magnifier_ = true;
     int handle_ = -1;
     QWidget *toolbar_;
+    QSpinBox *widthInput_;
+    QSpinBox *heightInput_;
+    QComboBox *ratioInput_;
     QVector<QPointF> handles() const;
     void accept(const QString &action);
     void placeToolbar();
+    void resizeSelection(int value, Qt::Orientation axis);
+    QSize ratioSize(const QSize &wanted, Qt::Orientation axis) const;
+    QRectF logicalSelection(QRect pixels) const;
+    QRectF hoverSelection() const;
+    void dragRatioSelection(const QPointF &end);
 };
 
 } // namespace still

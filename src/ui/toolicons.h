@@ -11,7 +11,7 @@ enum class ToolIcon {
     Rectangle, RoundedRectangle, Ellipse, Line, Arrow, Pen, Highlight,
     Mosaic, MosaicPen, Text, Number, Color, Undo, Redo, More,
     Clipboard, Files, Image, Link, Star, Trash, Pause, Settings, Keyboard, Capture,
-    TextSnippet, Ellipsis, Search, Preview, ChevronDown, Minimize, Maximize, Restore, Back
+    TextSnippet, Ellipsis, Search, Preview, ChevronDown, Minimize, Maximize, Restore, Back, QuickSave, Select, Crop, FlipHorizontal, FlipVertical
 };
 
 QIcon toolIcon(ToolIcon icon, QColor color = QColor("#e7edf6"));

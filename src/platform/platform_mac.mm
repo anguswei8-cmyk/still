@@ -8,6 +8,7 @@
 #include <QBuffer>
 #include <QCoreApplication>
 #include <QScreen>
+#include <QPixmap>
 #include <unistd.h>
 
 namespace still {
@@ -49,7 +50,7 @@ OcrResult recognizeNative(const QImage &image, const QString &language) {
         QByteArray png;
         QBuffer buffer(&png);
         buffer.open(QIODevice::WriteOnly);
-        if (!image.save(&buffer, "PNG")) return {{}, t("无法编码 OCR 图像")};
+        if (!image.save(&buffer, "PNG")) return {{}, {}, t("无法编码 OCR 图像")};
         NSData *data = [NSData dataWithBytes:png.constData() length:png.size()];
         VNRecognizeTextRequest *request = [[VNRecognizeTextRequest alloc] init];
         request.recognitionLevel = VNRequestTextRecognitionLevelAccurate;
@@ -57,16 +58,24 @@ OcrResult recognizeNative(const QImage &image, const QString &language) {
         NSString *requestedLanguage = [NSString stringWithUTF8String:language.toUtf8().constData()];
         NSError *error = nil;
         NSArray<NSString *> *supported = [request supportedRecognitionLanguagesAndReturnError:&error];
+        // Shared settings use regional tags; Vision may expose only the language/script prefix.
+        while (![supported containsObject:requestedLanguage]) {
+            const NSRange separator = [requestedLanguage rangeOfString:@"-" options:NSBackwardsSearch];
+            if (separator.location == NSNotFound) break;
+            requestedLanguage = [requestedLanguage substringToIndex:separator.location];
+        }
         if ([supported containsObject:requestedLanguage]) request.recognitionLanguages = @[requestedLanguage];
         VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithData:data options:@{}];
         if (![handler performRequests:@[request] error:&error])
-            return {{}, QString::fromUtf8(error.localizedDescription.UTF8String)};
+            return {{}, {}, error ? QString::fromUtf8(error.localizedDescription.UTF8String) : t("OCR 识别失败")};
         OcrResult output;
-        int line = 0;
         for (VNRecognizedTextObservation *observation in request.results) {
             VNRecognizedText *candidate = [observation topCandidates:1].firstObject;
             if (!candidate) continue;
             NSString *text = candidate.string;
+            if (!output.text.isEmpty()) output.text += '\n';
+            const qsizetype lineStart = output.text.size();
+            output.text += QString::fromUtf8(text.UTF8String);
             // Vision's accurate mode may return word boxes for multiple characters.
             // Merge equal boxes rather than pretending to offer exact character geometry.
             for (NSUInteger offset = 0; offset < text.length;) {
@@ -79,16 +88,17 @@ OcrResult recognizeNative(const QImage &image, const QString &language) {
                 CGRect box = rectangle.boundingBox;
                 QRectF bounds(box.origin.x * image.width(), (1 - box.origin.y - box.size.height) * image.height(),
                               box.size.width * image.width(), box.size.height * image.height());
-                QString value = QString::fromUtf8(part.UTF8String);
-                if (!output.words.isEmpty() && output.words.last().line == line && output.words.last().bounds == bounds)
-                    output.words.last().text += value;
-                else output.words.append({value, bounds, line});
+                const qsizetype start = lineStart + qsizetype(range.location), length = qsizetype(range.length);
+                if (!output.words.isEmpty() && output.words.last().textStart >= lineStart && output.words.last().bounds == bounds)
+                    output.words.last().textLength = start + length - output.words.last().textStart;
+                else output.words.append({bounds, start, length});
             }
-            ++line;
         }
         return output;
     }
 }
+
+QImage captureScreen(QScreen *screen) { return screen->grabWindow(0).toImage(); }
 
 QVector<QRect> windowRectangles(QScreen *screen) {
     QVector<QRect> rectangles;

@@ -9,6 +9,11 @@ ColumnLayout {
     property real captureClearance: 0
     property var searchField
     property double clock: Date.now()
+    readonly property bool previewFits: width >= 660
+    readonly property bool canPin: ["image", "text", "rich", "link"].indexOf(backend.selected.kind) >= 0
+    readonly property string pinLabel: backend.selected.kind === "image" ? qsTranslate("Still", "图片贴图") : backend.selected.kind === "rich" ? qsTranslate("Still", "富文本贴图") : qsTranslate("Still", "文字贴图")
+    onPreviewFitsChanged: backend.setClipboardPreviewFits(previewFits)
+    Component.onCompleted: backend.setClipboardPreviewFits(previewFits)
     spacing: 10
     component RowAction: UiButton {
         width: 28; height: 28
@@ -48,12 +53,13 @@ ColumnLayout {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             backend.activate((event.modifiers & Qt.ControlModifier) ? ((event.modifiers & Qt.ShiftModifier) ? "plain" : "copy") : "");
         } else if (event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
+            if (fromSearch) list.forceActiveFocus();
             backend.selectedIndex += event.key === Qt.Key_Down ? 1 : -1;
         } else if (!fromSearch && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
             backend.selectedIndex += event.key === Qt.Key_Right ? 1 : -1;
         } else if (!fromSearch && event.matches(StandardKey.Copy)) {
             backend.activate("copy");
-        } else if (!fromSearch && event.key === Qt.Key_Space && root.width >= 660) {
+        } else if (!fromSearch && event.key === Qt.Key_Space && root.previewFits) {
             backend.previewVisible = !backend.previewVisible;
         } else if (!fromSearch && event.key === Qt.Key_Delete) {
             backend.removeSelected();
@@ -75,7 +81,7 @@ ColumnLayout {
                     objectName: "Filter_" + modelData.key
                     text: modelData.text
                     implicitHeight: 32
-                    leftPadding: root.width < 660 ? 8 : 12
+                    leftPadding: !root.previewFits ? 8 : 12
                     rightPadding: leftPadding
                     quiet: true
                     checked: backend.filter === modelData.key
@@ -107,12 +113,18 @@ ColumnLayout {
         UiButton {
             objectName: "ClipboardPaste"
             visible: backend.pasteDefault
-            primary: true
-            keyHint: root.width >= 660 ? "Enter" : ""
+            quiet: true
+            implicitHeight: 32
+            keyHint: root.previewFits ? "Enter" : ""
             text: qsTranslate("Still", "粘贴到原窗口")
             ToolTip.text: text + " (Enter)"
             enabled: backend.selectedIndex >= 0
             onClicked: backend.activate()
+            background: Rectangle {
+                radius: 8
+                color: parent.down ? Theme.selection : parent.hovered ? Theme.hover : "transparent"
+                border.color: parent.visualFocus ? Theme.focus : "transparent"
+            }
         }
     }
     RowLayout {
@@ -143,7 +155,7 @@ ColumnLayout {
                 id: card
                 required property int index
                 required property var modelData
-                readonly property bool selected: backend.selectedIndex === index
+                readonly property bool selected: backend.selectedIndex === index && !root.searchField.activeFocus
                 objectName: "ClipRow" + index
                 x: 2
                 width: list.width - 4
@@ -278,14 +290,14 @@ ColumnLayout {
             }
         }
         Rectangle {
-            visible: backend.previewVisible && root.width >= 660
+            visible: backend.previewVisible && root.previewFits
             Layout.preferredWidth: 1
             Layout.fillHeight: true
             color: Theme.border
         }
         Item {
             objectName: "ClipboardPreview"
-            visible: backend.previewVisible && root.width >= 660
+            visible: backend.previewVisible && root.previewFits
             Layout.preferredWidth: Math.min(320, root.width * 0.4)
             Layout.fillHeight: true
             ColumnLayout {
@@ -294,7 +306,7 @@ ColumnLayout {
                     Layout.fillWidth: true
                     Label { text: backend.selected.kindLabel || qsTranslate("Still", "选择一条内容"); color: Theme.muted; font.pixelSize: 12; Layout.fillWidth: true }
                     UiButton { visible: backend.selected.kind === "image"; glyph: "edit"; quiet: true; implicitWidth: 28; leftPadding: 5; rightPadding: 5; ToolTip.text: qsTranslate("Still", "编辑图片"); onClicked: backend.activate("edit") }
-                    UiButton { visible: backend.selected.kind === "image"; glyph: "pin"; quiet: true; implicitWidth: 28; leftPadding: 5; rightPadding: 5; ToolTip.text: qsTranslate("Still", "图片贴图"); onClicked: backend.activate("pin") }
+                    UiButton { visible: root.canPin; glyph: "pin"; quiet: true; implicitWidth: 28; leftPadding: 5; rightPadding: 5; ToolTip.text: root.pinLabel; onClicked: backend.activate("pin") }
                 }
                 Image {
                     objectName: "ClipboardImagePreview"
@@ -316,7 +328,7 @@ ColumnLayout {
             }
         }
     }
-    Label { visible: root.width >= 660; text: qsTranslate("Still", "空格预览"); color: Theme.muted; font.pixelSize: 12 }
+    Label { visible: root.previewFits; text: qsTranslate("Still", "空格预览"); color: Theme.muted; font.pixelSize: 12 }
     Menu {
         id: contextMenu
         parent: root
@@ -352,14 +364,14 @@ ColumnLayout {
         Action {
             objectName: "ClipboardMenuPreview"
             text: backend.previewVisible ? qsTranslate("Still", "隐藏预览") : qsTranslate("Still", "显示预览")
-            enabled: root.width >= 660
+            enabled: root.previewFits
             onTriggered: backend.previewVisible = !backend.previewVisible
         }
         Action { objectName: "ClipboardMenuPin"; text: backend.selected.pinned ? qsTranslate("Still", "取消固定") : qsTranslate("Still", "固定内容"); enabled: backend.selectedIndex >= 0; onTriggered: backend.togglePin() }
         Action { text: qsTranslate("Still", "纯文本粘贴"); enabled: backend.selectedIndex >= 0 && backend.selected.kind !== "image" && backend.selected.kind !== "data"; onTriggered: backend.activate("plain") }
         MenuSeparator { topPadding: 4; bottomPadding: 4; contentItem: Rectangle { implicitHeight: 1; color: Theme.border } }
         Action { text: qsTranslate("Still", "编辑图片"); enabled: backend.selected.kind === "image"; onTriggered: backend.activate("edit") }
-        Action { text: qsTranslate("Still", "图片贴图"); enabled: backend.selected.kind === "image"; onTriggered: backend.activate("pin") }
+        Action { text: root.pinLabel; enabled: root.canPin; onTriggered: backend.activate("pin") }
         Action { text: qsTranslate("Still", "保存图片"); enabled: backend.selected.kind === "image"; onTriggered: backend.activate("save") }
         MenuSeparator { topPadding: 4; bottomPadding: 4; contentItem: Rectangle { implicitHeight: 1; color: Theme.border } }
         Action { text: qsTranslate("Still", "删除选中"); enabled: backend.selectedIndex >= 0; onTriggered: backend.removeSelected() }

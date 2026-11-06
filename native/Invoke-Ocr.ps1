@@ -47,28 +47,33 @@ try {
   if (-not $engine) { Fail 'no OCR language pack installed (Windows OCR)'; exit 0 }
 
   $result = Await ($engine.RecognizeAsync($bitmap)) ([Windows.Media.Ocr.OcrResult])
-  $lines = @()
+  $text = ''
   $positions = @()
   $lineIndex = 0
   foreach ($line in $result.Lines) {
-    $words = @()
+    if ($lineIndex -gt 0) { $text += "`n" }
+    $lineStart = $text.Length
+    $lineText = $line.Text
+    $text += $lineText
+    $searchFrom = 0
     foreach ($w in $line.Words) {
-      $words += $w.Text
+      $start = $lineText.IndexOf($w.Text, $searchFrom, [System.StringComparison]::Ordinal)
+      if ($start -lt 0) { throw 'OCR word is absent from the recognized line' }
       $positions += @{
-        text = $w.Text
+        start = $lineStart + $start
+        length = $w.Text.Length
         x = $w.BoundingRect.X
         y = $w.BoundingRect.Y
         width = $w.BoundingRect.Width
         height = $w.BoundingRect.Height
-        line = $lineIndex
       }
+      $searchFrom = $start + $w.Text.Length
     }
-    $lines += ($words -join ' ')
     $lineIndex++
   }
   $stream.Dispose()
   $bitmap.Dispose()
-  ( @{ ok = $true; text = ($lines -join [Environment]::NewLine); words = @($positions); message = "Windows OCR ($($engine.RecognizerLanguage.LanguageTag))" } | ConvertTo-Json -Depth 5 -Compress )
+  ( @{ ok = $true; text = $text; words = @($positions); message = "Windows OCR ($($engine.RecognizerLanguage.LanguageTag))" } | ConvertTo-Json -Depth 5 -Compress )
 } catch {
   Fail ("Windows OCR failed: " + $_.Exception.Message)
   exit 0

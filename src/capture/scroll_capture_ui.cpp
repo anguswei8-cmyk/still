@@ -133,10 +133,10 @@ ScrollCaptureUi::ScrollCaptureUi(const QRect &region, const QRect &available, QW
     auto *direction = new QLabel(t("纵向"), toolbar_); direction->setObjectName("ScrollDirection");
     layout->addWidget(direction); layout->addSpacing(8);
     auto *separator = new QFrame(toolbar_); separator->setProperty("role", "separator"); separator->setFixedSize(1, 22); layout->addWidget(separator);
-    const QStringList names{t("编辑"), t("文字"), t("贴图"), t("保存"), t("取消"), t("复制")};
-    const QStringList actions{"edit", "ocr", "pin", "save", "cancel", "copy"};
-    const QVector<ToolIcon> icons{ToolIcon::Edit, ToolIcon::Ocr, ToolIcon::Pin, ToolIcon::Save, ToolIcon::Close, ToolIcon::Copy};
-    const QVector<QKeySequence> keys{QKeySequence(Qt::Key_Return), QKeySequence("Ctrl+O"), QKeySequence("Ctrl+P"), QKeySequence::Save, QKeySequence(Qt::Key_Escape), QKeySequence::Copy};
+    const QStringList names{t("编辑"), t("文字"), t("贴图"), t("保存"), t("快速保存"), t("取消"), t("复制")};
+    const QStringList actions{"edit", "ocr", "pin", "save", "quickSave", "cancel", "copy"};
+    const QVector<ToolIcon> icons{ToolIcon::Edit, ToolIcon::Ocr, ToolIcon::Pin, ToolIcon::Save, ToolIcon::QuickSave, ToolIcon::Close, ToolIcon::Copy};
+    const QVector<QKeySequence> keys{QKeySequence(Qt::Key_Return), QKeySequence("Ctrl+O"), QKeySequence("Ctrl+P"), QKeySequence::Save, QKeySequence("Ctrl+Shift+S"), QKeySequence(Qt::Key_Escape), QKeySequence::Copy};
     for (int i = 0; i < actions.size(); ++i) {
         auto *button = new QToolButton(toolbar_);
         button->setObjectName(actions[i] == "edit" ? "ScrollFinish" : "scrollAction-" + actions[i]);

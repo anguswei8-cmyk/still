@@ -25,6 +25,7 @@ ScrollView {
             Layout.fillWidth: true
             Layout.bottomMargin: 16
         }
+        StartupRow { visible: backend.page === 1; Layout.fillWidth: true }
         Repeater {
             model: backend.settingRows
             delegate: SettingRow {
@@ -36,13 +37,27 @@ ScrollView {
             }
         }
         Label {
-            visible: backend.page === 2 || backend.page === 4 || (backend.page === 5 && Qt.platform.os === "osx")
-            text: backend.page === 2 ? qsTranslate("Still", "Mac 上 Command 对应 Windows 的 Ctrl。") : backend.page === 4 ? qsTranslate("Still", "贴图会自动识别文字。拖选后复制，按住 Alt 拖动可直接移动贴图。") : qsTranslate("Still", "自动粘贴需要系统辅助功能权限；未授权时仍可复制，再按 Command+V。")
+            visible: backend.page === 4 || (backend.page === 5 && Qt.platform.os === "osx")
+            text: backend.page === 4 ? qsTranslate("Still", "贴图会自动识别文字。拖选后复制，按住 Alt 拖动可直接移动贴图。") : qsTranslate("Still", "自动粘贴需要系统辅助功能权限；未授权时仍可复制，再按 Command+V。")
             font.pixelSize: 12
             color: Theme.muted
             wrapMode: Text.Wrap
             Layout.fillWidth: true
             Layout.topMargin: 18
+        }
+        UiButton {
+            objectName: "ApiSettings"
+            visible: backend.page === 1
+            text: qsTranslate("Still", "API 文字校对设置…")
+            Layout.topMargin: 18
+            onClicked: backend.openApiSettings()
+        }
+        UiButton {
+            objectName: "SettingsBackup"
+            visible: backend.page === 1
+            text: qsTranslate("Still", "配置备份与恢复…")
+            Layout.topMargin: 12
+            onClicked: backend.openSettingsBackup()
         }
         Item { height: 12 }
     }

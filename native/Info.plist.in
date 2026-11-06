@@ -9,5 +9,6 @@
 <key>CFBundleShortVersionString</key><string>${PROJECT_VERSION}</string>
 <key>CFBundleVersion</key><string>${PROJECT_VERSION}</string>
 <key>NSHighResolutionCapable</key><true/>
+<key>LSUIElement</key><true/>
 <key>NSScreenCaptureUsageDescription</key><string>Still needs screen recording access to capture your screen. Images stay on this device.</string>
 </dict></plist>

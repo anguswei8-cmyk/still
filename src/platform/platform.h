@@ -13,6 +13,7 @@ namespace still {
 OcrResult recognizeNative(const QImage &image, const QString &language);
 QVector<QRect> windowRectangles(QScreen *screen);
 bool requestCapturePermission();
+QImage captureScreen(QScreen *screen);
 bool excludeWindowFromCapture(quintptr windowId);
 quintptr currentPasteTarget();
 bool activatePasteTarget(quintptr target);

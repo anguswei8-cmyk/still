@@ -7,6 +7,8 @@ ColumnLayout {
     required property var field
     property bool first: false
     readonly property bool section: field.type === "section"
+    property bool restoringDefault: false
+    visible: !field.visibleForFormat || backend.form.save.format === field.visibleForFormat
     spacing: 0
     Rectangle {
         visible: root.section && !root.first
@@ -29,6 +31,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.minimumHeight: root.field.group === "appearance" && root.field.key === "theme" ? 116 : root.field.description ? 68 : 50
         spacing: 22
+        HoverHandler { id: rowHover }
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 4
@@ -52,10 +55,56 @@ ColumnLayout {
             }
         }
         Loader {
+            id: controlLoader
             active: !root.section
             Layout.alignment: Qt.AlignVCenter
-            Layout.preferredWidth: root.field.group === "appearance" ? (root.field.key === "theme" ? 330 : 240) : root.field.type === "switch" ? 40 : root.field.type === "number" ? 150 : root.field.type === "directory" ? 280 : root.field.type === "folder" ? 100 : 180
+            Layout.preferredWidth: root.field.group === "appearance" ? (root.field.key === "theme" ? 330 : 240) : root.field.type === "switch" ? 40 : root.field.type === "number" ? 150 : root.field.type === "directory" || root.field.type === "template" ? 280 : root.field.type === "folder" ? 100 : 180
             sourceComponent: root.field.group === "appearance" ? (root.field.key === "theme" ? appearanceControl : languageControl) : root.field.type === "switch" ? toggleControl : root.field.type === "choice" ? choiceControl : root.field.type === "number" ? numberControl : root.field.type === "directory" ? directoryControl : root.field.type === "shortcut" ? shortcutControl : root.field.type === "folder" ? folderControl : textControl
+        }
+        Loader {
+            active: !!root.field.key
+            visible: active
+            Layout.alignment: Qt.AlignVCenter
+            Layout.minimumWidth: 36
+            Layout.preferredWidth: 36
+            Layout.maximumWidth: 36
+            Layout.preferredHeight: 36
+            sourceComponent: UiButton {
+                anchors.fill: parent
+                objectName: "reset_" + root.field.group + "_" + root.field.key
+                glyph: "undo"
+                quiet: true
+                implicitWidth: 36
+                leftPadding: 9
+                rightPadding: 9
+                enabled: !!root.field.key && (backend.form[root.field.group][root.field.key] !== root.field.defaultValue
+                    || root.field.type === "number" && controlLoader.item
+                    && controlLoader.item.numberInput.contentItem.text !== controlLoader.item.numberInput.textFromValue(Number(root.field.defaultValue), controlLoader.item.numberInput.locale))
+                focusPolicy: Qt.TabFocus
+                activeFocusOnTab: enabled
+                opacity: enabled && (rowHover.hovered || activeFocus) ? 1 : 0
+                ToolTip.text: qsTranslate("Still", "恢复“%1”的默认值").arg(root.field.title)
+                Accessible.name: ToolTip.text
+                Accessible.ignored: !enabled
+                onClicked: {
+                    root.restoringDefault = true;
+                    let input, rawText;
+                    if (root.field.type === "number") {
+                        const number = controlLoader.item.numberInput;
+                        input = number.contentItem;
+                        rawText = input.text;
+                        // A confirmation must not commit unfinished quota input on focus loss.
+                        input.clear();
+                        input.insert(0, number.textFromValue(number.value, number.locale));
+                    }
+                    const restored = backend.restoreDefault(root.field.group, root.field.key);
+                    if (!restored && input) {
+                        input.clear();
+                        input.insert(0, rawText);
+                    }
+                    root.restoringDefault = false;
+                }
+            }
         }
     }
     Component {
@@ -78,13 +127,28 @@ ColumnLayout {
     }
     Component {
         id: textControl
-        UiField {
-            objectName: root.field.group + "_" + root.field.key
-            text: backend.form[root.field.group][root.field.key]
-            Accessible.name: root.field.title
-            Accessible.description: root.field.description || ""
-            onTextEdited: backend.setDraft(root.field.group, root.field.key, text)
-            onEditingFinished: backend.setSetting(root.field.group, root.field.key, text)
+        ColumnLayout {
+            spacing: 5
+            UiField {
+                objectName: root.field.group + "_" + root.field.key
+                Layout.fillWidth: true
+                text: backend.form[root.field.group][root.field.key]
+                Accessible.name: root.field.title
+                Accessible.description: root.field.description || ""
+                onTextEdited: backend.setDraft(root.field.group, root.field.key, text)
+                onEditingFinished: if (!root.restoringDefault) backend.setSetting(root.field.group, root.field.key, text)
+            }
+            Label {
+                objectName: "saveNamePreview"
+                visible: root.field.type === "template"
+                text: visible ? backend.saveNamePreview : ""
+                textFormat: Text.PlainText
+                font.pixelSize: 12
+                color: Theme.muted
+                wrapMode: Text.WrapAnywhere
+                Layout.fillWidth: true
+                Accessible.name: qsTranslate("Still", "文件名预览")
+            }
         }
     }
     Component {
@@ -100,7 +164,7 @@ ColumnLayout {
                 Accessible.name: root.field.title
                 Accessible.description: root.field.description || ""
                 onTextEdited: backend.setDraft(root.field.group, "dir", text)
-                onEditingFinished: backend.setSetting(root.field.group, "dir", text)
+                onEditingFinished: if (!root.restoringDefault) backend.setSetting(root.field.group, "dir", text)
             }
             UiButton { text: qsTranslate("Still", "选择"); onClicked: backend.browseDirectory(root.field.group) }
         }
@@ -129,6 +193,7 @@ ColumnLayout {
     Component {
         id: numberControl
         RowLayout {
+            property alias numberInput: number
             spacing: 7
             UiSpinBox {
                 id: number
@@ -143,7 +208,7 @@ ColumnLayout {
                 font.pixelSize: 13
                 Accessible.name: root.field.title
                 Accessible.description: root.field.description || ""
-                onValueModified: backend.setSetting(root.field.group, root.field.key, value)
+                onValueModified: if (!root.restoringDefault) backend.setSetting(root.field.group, root.field.key, value)
             }
             Label { visible: !!root.field.unit; text: root.field.unit || ""; font.pixelSize: 12; color: Theme.muted }
         }

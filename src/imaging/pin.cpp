@@ -2,6 +2,9 @@
 #include "pin.h"
 #include "editor.h"
 #include "ocr.h"
+#include "ocr_result_dialog.h"
+#include "storage/image_export.h"
+#include "clipboard/image_copy.h"
 
 #include <QApplication>
 #include <QAbstractButton>
@@ -23,7 +26,6 @@
 #include <QTimer>
 #include <QTransform>
 #include <QWheelEvent>
-#include <limits>
 
 namespace still {
 namespace {
@@ -101,10 +103,8 @@ protected:
 };
 } // namespace
 
-Pin::Pin(const QImage &image, const QRect &geometry, const QString &saveDirectory, const QString &language)
-    : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint),
-      image_(image), saveDirectory_(saveDirectory), language_(language) {
-    setAttribute(Qt::WA_DeleteOnClose);
+Pin::Pin(const QImage &image, const QRect &geometry, const QJsonObject &saveOptions, const QString &language)
+    : PinWindow(), image_(image), saveOptions_(saveOptions), language_(language) {
     setFocusPolicy(Qt::StrongFocus);
     setMouseTracking(true);
     setMinimumSize(40, 50);
@@ -126,7 +126,11 @@ Pin::Pin(const QImage &image, const QRect &geometry, const QString &saveDirector
 }
 
 void Pin::configure(bool wheelZoom, bool hideOnBlur, bool confirmDoubleClickClose) {
-    wheelZoom_ = wheelZoom; hideOnBlur_ = hideOnBlur; confirmDoubleClickClose_ = confirmDoubleClickClose;
+    wheelZoom_ = wheelZoom; setHideOnBlur(hideOnBlur); confirmDoubleClickClose_ = confirmDoubleClickClose;
+}
+
+PinState Pin::state() const {
+    auto result = layoutState(); result.image = image_; return result;
 }
 
 QRectF Pin::imageRect() const {
@@ -144,16 +148,15 @@ void Pin::setImage(const QImage &image) {
     if (image.isNull()) return;
     image_ = image;
     image_.setDevicePixelRatio(1);
-    words_.clear();
-    anchor_ = cursor_ = -1;
     recognize();
     update();
 }
 
 void Pin::recognize() {
     const int generation = ++generation_;
-    words_.clear();
+    ocr_ = {};
     anchor_ = cursor_ = -1;
+    allTextSelected_ = false;
     status_ = t("识别文字中… · Alt 拖动移动");
     update();
     delete ocrJob_.data();
@@ -161,8 +164,8 @@ void Pin::recognize() {
     ocrJob_ = job;
     connect(job, &OcrJob::finished, this, [this, generation](const OcrResult &result) {
         if (generation != generation_) return; // Rotation or editing invalidates the previous image's OCR geometry.
-        words_ = result.words;
-        status_ = !result.error.isEmpty() ? result.error : words_.isEmpty() ? t("未识别到文字 · 拖动移动") : t("拖选文字 · Ctrl/Cmd+C 复制 · Alt 拖动移动");
+        ocr_ = result;
+        status_ = !result.error.isEmpty() ? result.error : ocr_.words.isEmpty() ? t("未识别到文字 · 拖动移动") : t("拖选文字 · Ctrl/Cmd+C 复制 · Alt 拖动移动");
         setToolTip(status_);
         update();
     });
@@ -178,7 +181,7 @@ void Pin::paintEvent(QPaintEvent *) {
         painter.save();
         painter.translate(target.topLeft());
         painter.scale(target.width() / image_.width(), target.height() / image_.height());
-        for (int i = qMin(anchor_, cursor_); i <= qMax(anchor_, cursor_); ++i) painter.fillRect(words_[i].bounds, QColor(50, 140, 255, 90));
+        for (int i = qMin(anchor_, cursor_); i <= qMax(anchor_, cursor_); ++i) painter.fillRect(ocr_.words[i].bounds, QColor(50, 140, 255, 90));
         painter.restore();
     }
     painter.setPen(isActiveWindow() ? QColor("#63b3ff") : QColor("#7c8594"));
@@ -190,7 +193,8 @@ void Pin::paintEvent(QPaintEvent *) {
 
 void Pin::mousePressEvent(QMouseEvent *event) {
     if (event->button() != Qt::LeftButton) return;
-    const int hit = event->modifiers() & Qt::AltModifier ? -1 : wordAt(words_, imagePoint(event->position()));
+    allTextSelected_ = false;
+    const int hit = event->modifiers() & Qt::AltModifier ? -1 : wordAt(ocr_.words, imagePoint(event->position()));
     if (hit >= 0) {
         selecting_ = true;
         anchor_ = cursor_ = hit;
@@ -206,18 +210,10 @@ void Pin::mouseMoveEvent(QMouseEvent *event) {
     if (moving_) { move(event->globalPosition().toPoint() - dragOffset_); return; }
     const QPointF point = imagePoint(event->position());
     if (selecting_) {
-        int nearest = wordAt(words_, point);
-        if (nearest < 0) {
-            qreal best = std::numeric_limits<qreal>::max();
-            for (int i = 0; i < words_.size(); ++i) {
-                const QPointF delta = words_[i].bounds.center() - point;
-                const qreal distance = delta.x() * delta.x() + delta.y() * delta.y();
-                if (distance < best) { best = distance; nearest = i; }
-            }
-        }
+        const int nearest = wordAt(ocr_.words, point, true);
         if (nearest >= 0) cursor_ = nearest;
         update();
-    } else setCursor(wordAt(words_, point) >= 0 && !(event->modifiers() & Qt::AltModifier) ? Qt::IBeamCursor : Qt::ArrowCursor);
+    } else setCursor(wordAt(ocr_.words, point) >= 0 && !(event->modifiers() & Qt::AltModifier) ? Qt::IBeamCursor : Qt::ArrowCursor);
 }
 
 void Pin::mouseReleaseEvent(QMouseEvent *event) {
@@ -230,9 +226,12 @@ void Pin::mouseDoubleClickEvent(QMouseEvent *event) {
     if (confirmDoubleClickClose_) {
         confirmingClose_ = true;
         auto *prompt = new PinClosePrompt(this);
+        connect(prompt, &QObject::destroyed, this, [this] {
+            // Popup focus events can arrive after its deferred deletion.
+            QTimer::singleShot(0, this, [this] { confirmingClose_ = false; });
+        });
         // A local nonmodal popup must not activate the application's main-window group.
         connect(prompt, &QDialog::finished, this, [this, skip = prompt->skip](int result) {
-            confirmingClose_ = false;
             if (result != QDialog::Accepted) return;
             if (skip->isChecked()) emit doubleClickClosePromptDisabled();
             close();
@@ -261,15 +260,21 @@ void Pin::wheelEvent(QWheelEvent *event) {
 }
 
 void Pin::copy(bool forceImage) {
-    const QString text = forceImage ? QString() : selectedText(words_, anchor_, cursor_);
+    const QString text = forceImage ? QString() : allTextSelected_ ? ocr_.text : selectedText(ocr_, anchor_, cursor_);
     if (!text.isEmpty()) QApplication::clipboard()->setText(text);
-    else QApplication::clipboard()->setImage(image_);
+    else {
+        QString error;
+        const bool copied = copyImageToClipboard(image_, saveOptions_, &error);
+        status_ = !copied ? t("复制失败：") + error : saveOptions_.value("copyAsFile").toBool() ? t("已复制图像文件") : t("已复制图片");
+        setToolTip(status_); update();
+    }
 }
 
 void Pin::keyPressEvent(QKeyEvent *event) {
     if (event->matches(QKeySequence::Copy)) { copy(); return; }
-    if (event->matches(QKeySequence::SelectAll) && !words_.isEmpty()) { anchor_ = 0; cursor_ = int(words_.size()) - 1; update(); return; }
-    if (event->matches(QKeySequence::Save)) { saveWithDialog(this, image_, saveDirectory_); return; }
+    if (event->matches(QKeySequence::SelectAll) && !ocr_.text.isEmpty()) { allTextSelected_ = true; anchor_ = 0; cursor_ = int(ocr_.words.size()) - 1; update(); return; }
+    if (QKeySequence(event->keyCombination()) == QKeySequence("Ctrl+Shift+S")) { save(true); return; }
+    if (event->matches(QKeySequence::Save)) { save(); return; }
     if (event->key() == Qt::Key_Escape || event->key() == Qt::Key_Delete) { close(); return; }
     if (event->key() == Qt::Key_Space) { emit editRequested(this); return; }
     if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_O) { recognize(); return; }
@@ -281,32 +286,48 @@ void Pin::keyPressEvent(QKeyEvent *event) {
 
 void Pin::contextMenuEvent(QContextMenuEvent *event) {
     QMenu menu(this);
-    if (!selectedText(words_, anchor_, cursor_).isEmpty()) menu.addAction(t("复制选中文字"), this, [this] { copy(); });
-    menu.addAction(t("复制图片"), this, [this] { copy(true); });
-    menu.addAction(t("保存图片…"), this, [this] { saveWithDialog(this, image_, saveDirectory_); });
+    menu.setObjectName("PinMenu");
+    const bool textSelected = allTextSelected_ || !selectedText(ocr_, anchor_, cursor_).isEmpty();
+    menu.addAction(textSelected ? t("复制选中文字") : t("复制图片"), this, [this] { copy(); });
+    menu.addAction(t("保存图片…"), this, [this] { save(); });
     menu.addAction(t("编辑标注…"), this, [this] { emit editRequested(this); });
-    menu.addAction(t("重新识别文字"), this, &Pin::recognize);
-    auto *allText = menu.addAction(t("复制全部文字"), this, [this] {
-        QApplication::clipboard()->setText(selectedText(words_, 0, int(words_.size()) - 1));
+    auto *more = menu.addMenu(t("更多操作"));
+    more->setObjectName("PinMoreMenu");
+    if (textSelected) more->addAction(t("复制图片"), this, [this] { copy(true); });
+    auto *allText = more->addAction(t("复制全部文字"), this, [this] {
+        QApplication::clipboard()->setText(ocr_.text);
     });
-    allText->setEnabled(!words_.isEmpty());
-    menu.addSeparator();
-    menu.addAction(t("旋转 90°"), this, [this] { setImage(image_.transformed(QTransform().rotate(90))); });
-    menu.addAction(t("恢复大小和透明度"), this, [this] { resize(originalSize_); setWindowOpacity(1); });
-    auto *top = menu.addAction(t("保持置顶"));
+    allText->setEnabled(!ocr_.text.isEmpty());
+    auto *proofread = more->addAction(t("校对识别文字…"), this, [this] { (new OcrResultDialog(ocr_.text, this))->show(); });
+    proofread->setObjectName("ProofreadOcrText"); proofread->setEnabled(!ocr_.text.isEmpty());
+    more->addAction(t("重新识别文字"), this, &Pin::recognize);
+    more->addSeparator();
+    more->addAction(t("快速保存"), this, [this] { save(true); });
+    more->addAction(t("旋转 90°"), this, [this] { setImage(image_.transformed(QTransform().rotate(90))); });
+    more->addAction(t("恢复大小和透明度"), this, [this] { resize(originalSize_); setWindowOpacity(1); });
+    auto *top = more->addAction(t("保持置顶"));
     top->setCheckable(true);
     top->setChecked(windowFlags() & Qt::WindowStaysOnTopHint);
     connect(top, &QAction::triggered, this, [this](bool on) { setWindowFlag(Qt::WindowStaysOnTopHint, on); show(); });
+    more->addSeparator();
+    more->addAction(t("隐藏/显示全部贴图"), this, &Pin::toggleAllRequested);
+    auto *restore = more->addAction(t("恢复最近关闭贴图"), this, &Pin::restoreClosedRequested);
+    restore->setObjectName("RestoreClosedPin");
+    restore->setEnabled(canRestoreClosed_);
+    more->addAction(t("关闭全部贴图"), this, &Pin::closeAllRequested);
     menu.addSeparator();
-    menu.addAction(t("隐藏/显示全部贴图"), this, &Pin::toggleAllRequested);
-    menu.addAction(t("关闭全部贴图"), this, &Pin::closeAllRequested);
     menu.addAction(t("关闭"), this, &QWidget::close);
     menu.exec(event->globalPos());
 }
 
-bool Pin::event(QEvent *event) {
-    if (event->type() == QEvent::WindowDeactivate && hideOnBlur_ && !confirmingClose_ && !QApplication::activePopupWidget()) hide();
-    return QWidget::event(event);
+void Pin::save(bool quick) {
+    if (!quick) { if (saveWithDialog(this, image_, saveOptions_)) emit imageSaved(image_); return; }
+    QString error;
+    const QString path = exportImage(image_, saveOptions_, &error);
+    status_ = path.isEmpty() ? t("保存失败") + ": " + error : t("已保存到：") + path;
+    update();
+    if (!path.isEmpty()) emit imageSaved(image_);
 }
+
 
 } // namespace still

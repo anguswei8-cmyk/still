@@ -1,8 +1,10 @@
 #pragma once
 
-#include "clipboard/clipboard_data.h"
+#include "clipboard/clipboard_browse.h"
 #include "storage/history.h"
 #include "i18n.h"
+#include "settings/settings_draft.h"
+#include "platform/startup.h"
 #include <QDialog>
 #include <QJsonObject>
 #include <QTimer>
@@ -16,16 +18,16 @@ class ClipboardController;
 class SettingsApply;
 class UiImages;
 
-QJsonObject normalizeSettings(QJsonObject form);
-
 class MainWindow final : public QDialog {
     Q_OBJECT
     Q_PROPERTY(int page READ page WRITE setPage NOTIFY pageChanged)
     Q_PROPERTY(QVariantMap form READ form NOTIFY formChanged)
+    Q_PROPERTY(QString saveNamePreview READ saveNamePreview NOTIFY formChanged)
     Q_PROPERTY(QVariantList settingRows READ settingRows NOTIFY pageChanged)
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool statusError READ statusError NOTIFY statusChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY statusChanged)
+    Q_PROPERTY(QVariantMap startup READ startup NOTIFY startupChanged)
     Q_PROPERTY(QVariantList clips READ clips NOTIFY clipsChanged)
     Q_PROPERTY(int totalCount READ totalCount NOTIFY clipsChanged)
     Q_PROPERTY(QString search READ search WRITE setSearch NOTIFY searchChanged)
@@ -48,29 +50,32 @@ class MainWindow final : public QDialog {
 public:
     MainWindow(SettingsApply &settings, HistoryStore &history, ClipboardArchive &archive, ClipboardController &clipboard);
     ~MainWindow() override;
+    void showAndActivate();
     QQuickWidget *view() const { return view_; }
     int page() const { return page_; }
     void setPage(int page);
-    QVariantMap form() const { return form_.toVariantMap(); }
+    QVariantMap form() const { return draft_.form().toVariantMap(); }
+    QString saveNamePreview() const;
     QVariantList settingRows() const;
-    QString status() const { return status_; }
-    bool statusError() const { return statusError_; }
+    QString status() const { return draft_.status(); }
+    bool statusError() const { return draft_.statusError(); }
     bool busy() const;
-    QVariantList clips() const { return clips_; }
+    QVariantMap startup() const;
+    QVariantList clips() const { return browse_.clips(); }
     int totalCount() const;
-    QString search() const { return search_; }
-    void setSearch(const QString &search);
-    QString filter() const { return filter_; }
-    void setFilter(const QString &filter);
-    int selectedIndex() const { return selectedIndex_; }
+    QString search() const { return browse_.search(); }
+    void setSearch(const QString &search) { browse_.setSearch(search); }
+    QString filter() const { return browse_.filter(); }
+    void setFilter(const QString &filter) { browse_.setFilter(filter); }
+    int selectedIndex() const { return browse_.selectedIndex(); }
     void setSelectedIndex(int index);
-    QVariantMap selected() const;
+    QVariantMap selected() const { return browse_.selected(); }
     bool paused() const;
     bool pasteDefault() const;
-    bool previewVisible() const { return previewVisible_; }
-    void setPreviewVisible(bool visible);
-    QString previewText() const { return previewText_; }
-    QString previewImage() const { return previewImage_; }
+    bool previewVisible() const { return browse_.previewVisible(); }
+    void setPreviewVisible(bool visible) { browse_.setPreviewVisible(visible); }
+    QString previewText() const { return browse_.previewText(); }
+    QString previewImage() const { return browse_.previewUrl(); }
     QString message() const { return message_; }
     QVariantList historyItems() const { return historyItems_; }
     QString historySummary() const { return historySummary_; }
@@ -78,14 +83,20 @@ public:
     bool historyMore() const { return historyItems_.size() < historyEntries_.size(); }
     bool dark() const;
     bool glassAvailable() const { return glassAvailable_; }
+    Q_INVOKABLE void setClipboardPreviewFits(bool fits) { browse_.setPreviewFits(fits); }
     Q_INVOKABLE void focusSearch();
-    Q_INVOKABLE void setDraft(const QString &group, const QString &key, const QVariant &value);
-    Q_INVOKABLE void setSetting(const QString &group, const QString &key, const QVariant &value);
-    Q_INVOKABLE void commitDrafts();
+    Q_INVOKABLE void setDraft(const QString &group, const QString &key, const QVariant &value) { draft_.setDraft(group, key, value); }
+    Q_INVOKABLE void setSetting(const QString &group, const QString &key, const QVariant &value) { draft_.setSetting(group, key, value); }
+    Q_INVOKABLE bool restoreDefault(const QString &group, const QString &key);
+    Q_INVOKABLE void commitDrafts() { draft_.commitDrafts(); }
     Q_INVOKABLE void setShortcut(const QString &name, int key, int modifiers);
     Q_INVOKABLE QString shortcutText(const QString &name) const;
     Q_INVOKABLE void browseDirectory(const QString &group);
     Q_INVOKABLE void openDirectory(const QString &group);
+    Q_INVOKABLE void openSettingsBackup();
+    Q_INVOKABLE void openApiSettings();
+    Q_INVOKABLE void setStartupEnabled(bool enabled);
+    Q_INVOKABLE void openStartupSettings();
     Q_INVOKABLE void activate(const QString &action = QString());
     Q_INVOKABLE void togglePin();
     Q_INVOKABLE void removeSelected();
@@ -105,6 +116,7 @@ signals:
     void appearanceChanged();
     void formChanged();
     void statusChanged();
+    void startupChanged();
     void clipsChanged();
     void searchChanged();
     void filterChanged();
@@ -120,7 +132,6 @@ protected:
     void closeEvent(QCloseEvent *event) override;
     void hideEvent(QHideEvent *event) override;
     void showEvent(QShowEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
     void changeEvent(QEvent *event) override;
 private:
     SettingsApply &settings_;
@@ -130,18 +141,12 @@ private:
     QQuickWidget *view_ = nullptr;
     UiImages *images_ = nullptr;
     int page_ = 0;
-    QJsonObject form_, submitted_, accepted_;
-    QString status_;
-    bool statusError_ = false;
+    SettingsDraft draft_;
+    StartupStatus startup_;
+    QString startupError_;
     bool glassAvailable_ = false;
-    QString search_, filter_ = QStringLiteral("all"), selectedId_;
-    QVariantList clips_;
-    QVector<ClipEntry> filtered_;
-    int selectedIndex_ = -1;
-    bool previewVisible_ = false;
-    QString previewText_, previewImage_, message_;
-    quint64 previewRevision_ = 0;
-    QTimer previewTimer_;
+    ClipboardBrowse browse_;
+    QString message_;
     QVariantList historyItems_;
     QList<HistoryEntry> historyEntries_;
     QString historySummary_;
@@ -150,9 +155,8 @@ private:
     quint64 historyGeneration_ = 0;
     quint64 historyOpenGeneration_ = 0;
     bool historyOpening_ = false;
-    void refreshClips();
-    void updatePreview();
     void showMessage(const QString &message);
     void updateBackdrop();
+    void refreshStartup();
 };
 } // namespace still

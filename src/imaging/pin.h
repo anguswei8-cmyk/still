@@ -1,26 +1,29 @@
 #pragma once
 
 #include "image.h"
+#include "pin_window.h"
 #include <QPointer>
+#include <QJsonObject>
 #include <QWidget>
 
 namespace still {
 
 class OcrJob;
 
-class Pin : public QWidget {
+class Pin : public PinWindow {
     Q_OBJECT
 public:
-    Pin(const QImage &image, const QRect &geometry, const QString &saveDirectory, const QString &language);
+    Pin(const QImage &image, const QRect &geometry, const QJsonObject &saveOptions, const QString &language);
+    void configureSave(const QJsonObject &options) { saveOptions_ = options; }
     void setImage(const QImage &image);
     void recognize();
     void configure(bool wheelZoom, bool hideOnBlur, bool confirmDoubleClickClose = true);
     QImage image() const { return image_; }
+    PinState state() const override;
 signals:
     void editRequested(still::Pin *pin);
-    void toggleAllRequested();
-    void closeAllRequested();
     void doubleClickClosePromptDisabled();
+    void imageSaved(const QImage &image);
 protected:
     void paintEvent(QPaintEvent *) override;
     void mousePressEvent(QMouseEvent *) override;
@@ -30,28 +33,26 @@ protected:
     void wheelEvent(QWheelEvent *) override;
     void keyPressEvent(QKeyEvent *) override;
     void contextMenuEvent(QContextMenuEvent *) override;
-    bool event(QEvent *) override;
 private:
     QImage image_;
-    QVector<OcrWord> words_;
-    QString saveDirectory_;
+    OcrResult ocr_;
+    QJsonObject saveOptions_;
     QString language_;
     QString status_;
     QPointer<OcrJob> ocrJob_;
     int generation_ = 0;
     int anchor_ = -1;
     int cursor_ = -1;
+    bool allTextSelected_ = false;
     bool selecting_ = false;
     bool moving_ = false;
     bool wheelZoom_ = true;
-    bool hideOnBlur_ = false;
     bool confirmDoubleClickClose_ = true;
-    bool confirmingClose_ = false;
     QPoint dragOffset_;
-    QSize originalSize_;
     QRectF imageRect() const;
     QPointF imagePoint(const QPointF &point) const;
     void copy(bool forceImage = false);
+    void save(bool quick = false);
     void zoom(qreal factor, const QPoint &anchor);
 };
 

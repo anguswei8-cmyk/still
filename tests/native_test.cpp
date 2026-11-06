@@ -26,6 +26,15 @@
 #ifdef Q_OS_WIN
 #include <qt_windows.h>
 #endif
+#ifdef Q_OS_MACOS
+#import <Vision/Vision.h>
+#import <objc/runtime.h>
+
+static BOOL failVisionRequest(id, SEL, NSArray *, NSError **error) {
+    *error = nil;
+    return NO;
+}
+#endif
 
 using namespace still;
 
@@ -164,7 +173,7 @@ private slots:
 #endif
         QSignalSpy finishRequested(&hud, &ScrollCaptureUi::finishRequested);
         QSignalSpy actions(&hud, &ScrollCaptureUi::actionRequested);
-        const QStringList actionIds{"edit", "ocr", "pin", "save", "cancel", "copy"};
+        const QStringList actionIds{"edit", "ocr", "pin", "save", "quickSave", "cancel", "copy"};
         for (const auto &action : actionIds) {
             auto *button = hud.findChild<QAbstractButton *>(action == "edit" ? "ScrollFinish" : "scrollAction-" + action);
             QVERIFY(button); QVERIFY(!button->toolTip().isEmpty());
@@ -173,7 +182,17 @@ private slots:
         }
         QCOMPARE(finishRequested.count(), actionIds.size()); QCOMPARE(finished.count(), 1); hud.hide(); QVERIFY(!selection->isVisible()); QVERIFY(!toolbar->isVisible());
     }
+    void systemOcrReturnsTextAndPositions_data() {
+        QTest::addColumn<QString>("language");
+        QTest::addColumn<QString>("sample");
+        QTest::addColumn<QString>("expected");
+        QTest::newRow("english") << QString("en-US") << QString("Hello Qt 123") << QString("Hello");
+#ifdef Q_OS_MACOS
+        QTest::newRow("default-chinese") << QString("zh-Hans-CN") << QStringLiteral("中文识别 Qt 123") << QStringLiteral("中文");
+#endif
+    }
     void systemOcrReturnsTextAndPositions() {
+        QFETCH(QString, language); QFETCH(QString, sample); QFETCH(QString, expected);
         QImage image(900, 220, QImage::Format_ARGB32);
         image.fill(Qt::white);
         QPainter painter(&image);
@@ -181,19 +200,43 @@ private slots:
         font.setPixelSize(64);
         painter.setFont(font);
         painter.setPen(Qt::black);
-        painter.drawText(QRect(30, 40, 840, 140), Qt::AlignLeft | Qt::AlignVCenter, "Hello Qt 123");
+        painter.drawText(QRect(30, 40, 840, 140), Qt::AlignLeft | Qt::AlignVCenter, sample);
         painter.end();
-        const auto result = recognizeNative(image, "en-US");
+        const auto result = recognizeNative(image, language);
         QVERIFY2(result.error.isEmpty(), qPrintable(result.error));
         QVERIFY(!result.words.isEmpty());
-        const QString text = selectedText(result.words, 0, int(result.words.size()) - 1);
-        QVERIFY2(text.contains("Hello", Qt::CaseInsensitive), qPrintable(text));
+        const QString text = selectedText(result, 0, int(result.words.size()) - 1);
+        QCOMPARE(text, result.text);
+        QVERIFY2(text.contains(expected, Qt::CaseInsensitive), qPrintable(text));
+        QVERIFY2(text.contains("Qt", Qt::CaseInsensitive), qPrintable(text));
         QVERIFY2(text.contains("123"), qPrintable(text));
+        qsizetype previousEnd = 0;
         for (const auto &word : result.words) {
             QVERIFY(!word.bounds.isEmpty());
             QVERIFY(QRectF(image.rect()).contains(word.bounds));
+            QVERIFY(word.textStart >= previousEnd);
+            QVERIFY(word.textLength > 0);
+            QVERIFY(word.textStart + word.textLength <= result.text.size());
+            previousEnd = word.textStart + word.textLength;
         }
     }
+#ifdef Q_OS_MACOS
+    void systemOcrReportsFailureWithoutNativeError() {
+        const auto method = class_getInstanceMethod(VNImageRequestHandler.class, @selector(performRequests:error:));
+        const auto original = method_setImplementation(method, reinterpret_cast<IMP>(failVisionRequest));
+        const auto restore = qScopeGuard([&] { method_setImplementation(method, original); });
+        QImage image(80, 50, QImage::Format_ARGB32); image.fill(Qt::white);
+        const auto result = recognizeNative(image, "en-US");
+        QCOMPARE(result.error, t("OCR 识别失败"));
+        QVERIFY(result.words.isEmpty());
+    }
+    void systemOcrAcceptsImageWithoutText() {
+        QImage image(320, 180, QImage::Format_ARGB32); image.fill(Qt::white);
+        const auto result = recognizeNative(image, "en-US");
+        QVERIFY2(result.error.isEmpty(), qPrintable(result.error));
+        QVERIFY(result.words.isEmpty());
+    }
+#endif
     void scrollingPreviewFitsScreenEdgeAndClosesItsSelection() {
         if (QGuiApplication::platformName() != "windows") QSKIP("Native Windows capture exclusion test");
         if (QOperatingSystemVersion::current() < QOperatingSystemVersion::Windows10_2004) QSKIP("Capture exclusion requires Windows 10 2004");
@@ -250,7 +293,7 @@ private slots:
             if (!error.isEmpty() || (payload.empty() && !original->formats().isEmpty())) QSKIP("Cannot safely preserve current clipboard");
             backup = payload;
         }
-        const QString sample = QStringLiteral("PixClone panel paste 你好");
+        const QString sample = QStringLiteral("Still panel paste 你好");
         const auto restore = qScopeGuard([&] {
             // Clipboard managers may briefly lock OLE; retain the backup for a bounded retry.
             for (int attempt = 0; attempt < 10; ++attempt) {
@@ -270,10 +313,10 @@ private slots:
         QWidget host;
         controller.attachHost(&host);
         connect(&controller, &ClipboardController::dismissRequested, &host, &QWidget::hide);
-        QLineEdit target; target.resize(600, 100); target.setWindowTitle("PixClone clipboard paste target"); target.show(); target.activateWindow(); target.setFocus();
+        QLineEdit target; target.resize(600, 100); target.setWindowTitle("Still clipboard paste target"); target.show(); target.activateWindow(); target.setFocus();
         const auto handle = quintptr(target.winId());
         activatePasteTarget(handle);
-        QDeadlineTimer deadline(qMax(1000, qEnvironmentVariableIntValue("PIXCLONE_NATIVE_PASTE_WAIT_MS")));
+        QDeadlineTimer deadline(qMax(1000, qEnvironmentVariableIntValue("STILL_NATIVE_PASTE_WAIT_MS")));
         while (currentPasteTarget() != handle && !deadline.hasExpired()) QTest::qWait(50);
         if (currentPasteTarget() != handle) QSKIP("OS did not allow test window activation");
         controller.prepare(); host.show(); host.raise(); host.activateWindow();
