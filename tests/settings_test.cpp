@@ -3346,6 +3346,32 @@ private slots:
         controller.reset(); QCOMPARE(readJson(directory.filePath("PinSessions/session.json")), manifest);
         QVERIFY(QFileInfo::exists(directory.filePath("PinSessions/" + manifest.value("pins").toArray()[1].toObject().value("image").toString())));
     }
+    void pendingPinRestorePreservesTheOriginalSessionOnExit() {
+        QTemporaryDir directory; const auto previous = qgetenv("STILL_DATA_DIR");
+        const auto appearance = window_->form().value("appearance").toMap();
+        const auto reset = qScopeGuard([&] { qputenv("STILL_DATA_DIR", previous); InterfacePreferences::instance().apply(QJsonObject::fromVariantMap(appearance)); });
+        qputenv("STILL_DATA_DIR", directory.path().toUtf8());
+        QJsonObject keys; for (const auto &name : hotkeyNames) keys[name] = "";
+        QVERIFY(writeJson(settingsPath(), {{"hotkeys", keys}, {"history", QJsonObject{{"enabled", false}}}}));
+        QImage oldImage(120, 80, QImage::Format_ARGB32); oldImage.fill(Qt::red);
+        const PinState oldPin{QUuid::createUuid().toString(QUuid::WithoutBraces), oldImage, QRect(50, 60, 240, 180), QSize(126, 108), 1, true, {}};
+        PinSession session(directory.filePath("PinSessions")); QString error; QVERIFY(session.save({oldPin}, &error));
+        QFile manifest(directory.filePath("PinSessions/session.json")); QVERIFY(manifest.open(QIODevice::ReadOnly));
+        const auto original = manifest.readAll(); manifest.close();
+        const auto record = QJsonDocument::fromJson(original).object().value("pins").toArray().first().toObject();
+        const auto oldPath = directory.filePath("PinSessions/" + record.value("image").toString());
+        auto controller = std::make_unique<Application>(nullptr, false);
+        controller->findChild<QSystemTrayIcon *>()->contextMenu()->findChild<QAction *>("RestorePinSession")->trigger();
+        QVERIFY(controller->findChild<QObject *>("PinSessionRestoreJob"));
+        QImage newImage(80, 60, QImage::Format_ARGB32); newImage.fill(Qt::green);
+        controller->findChild<ClipboardController *>()->pinImage(newImage);
+        // Exit before dispatching the queued restore completion, even if its worker has finished.
+        controller.reset();
+        QVERIFY(manifest.open(QIODevice::ReadOnly)); QCOMPARE(manifest.readAll(), original);
+        QCOMPARE(QImage(oldPath).convertToFormat(QImage::Format_ARGB32), oldImage);
+        const auto restored = session.load(); QVERIFY(restored.errors.isEmpty()); QCOMPARE(restored.pins.size(), 1);
+        QCOMPARE(restored.pins.first().id, oldPin.id);
+    }
     void applicationExitFinishesQueuedSettings_data() {
         QTest::addColumn<bool>("withDraft");
         QTest::newRow("queued") << false;

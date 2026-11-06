@@ -597,6 +597,8 @@ void Application::restoreClosedPin() {
 
 void Application::restorePinSession() {
     if (pinRestoreJob_) return;
+    // Preserve the old session over new pins if exit interrupts restoration.
+    pinSessionIncomplete_ = true;
     auto *job = new QFutureWatcher<PinSessionResult>(this);
     job->setObjectName("PinSessionRestoreJob");
     pinRestoreJob_ = job;
