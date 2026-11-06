@@ -8,7 +8,7 @@ class QWidget;
 
 namespace still {
 
-enum class ClipAction { Paste, Copy, PlainPaste, EditImage, PinImage, SaveImage };
+enum class ClipAction { Paste, Copy, PlainPaste, EditImage, PinImage, SaveImage, PinText };
 
 class ClipboardController : public QObject {
     Q_OBJECT
@@ -30,6 +30,7 @@ signals:
     void stateChanged();
     void editImage(const QImage &image);
     void pinImage(const QImage &image);
+    void pinText(const QString &text, const QString &html = {});
     void saveImage(const QImage &image);
 protected:
     bool eventFilter(QObject *object, QEvent *event) override;

@@ -1,5 +1,6 @@
 #include "ui/i18n.h"
 #include "clipboard_controller.h"
+#include "imaging/pin_state.h"
 #include "platform/platform.h"
 
 #include <QApplication>
@@ -22,6 +23,13 @@ ClipboardController::ClipboardController(ClipboardArchive &archive, QJsonObject 
         const ClipAction action = pendingAction_;
         pendingId_.clear();
         if (!error.isEmpty() && (action != ClipAction::PlainPaste || payload.empty())) { emit feedback(error); return; }
+        if (action == ClipAction::PinText) {
+            QString html;
+            for (const auto &format : payload.formats) if (format.name == "text/html") { html = QString::fromUtf8(format.data); break; }
+            if (payload.text.isEmpty() || payload.text.toUtf8().size() + html.toUtf8().size() > maximumTextPinBytes) { emit feedback(t("文本贴图内容无效或超过 32 MiB")); return; }
+            emit pinText(payload.text, html);
+            return;
+        }
         if (action == ClipAction::EditImage || action == ClipAction::PinImage || action == ClipAction::SaveImage) {
             if (payload.image.isNull()) { emit feedback(t("该条目不是可用图片")); return; }
             if (action == ClipAction::EditImage) emit editImage(payload.image);

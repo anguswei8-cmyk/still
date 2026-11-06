@@ -8,8 +8,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QSignalSpy>
+#include <QScopeGuard>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QTextDocument>
 
 using namespace still;
 
@@ -19,6 +21,36 @@ static ClipPayload text(const QString &value) { QMimeData mime; mime.setText(val
 class ClipboardTest : public QObject {
     Q_OBJECT
 private slots:
+    void internalClipboardMarkersAreNotArchived() {
+        QMimeData mime;
+        mime.setText("keep text");
+        mime.setData("application/x-still-clipboard-id", "current");
+        mime.setData("application/x-pixclone-clipboard-id", "legacy");
+        QString error;
+        ClipEntry entry;
+        const auto payload = decodeClipboard(encodeClipboard(captureClipboard(mime), &entry, &error), &error);
+        std::unique_ptr<QMimeData> restored(restoreClipboard(payload));
+        QCOMPARE(restored->text(), QString("keep text"));
+        QVERIFY(!restored->hasFormat("application/x-still-clipboard-id"));
+        QVERIFY(!restored->hasFormat("application/x-pixclone-clipboard-id"));
+    }
+    void legacyArchiveMarkerKeepsHistoryReadable() {
+        QTemporaryDir directory;
+        const QString root = directory.filePath("clips");
+        {
+            ClipboardArchive archive(options(root));
+            archive.add(text("keep history"));
+            QTRY_COMPARE(archive.entries().size(), 1);
+        }
+        QVERIFY(QFile::rename(QDir(root).filePath(".still-clipboard"), QDir(root).filePath(".pixclone-clipboard")));
+        ClipboardArchive archive(options(root));
+        QTRY_COMPARE(archive.entries().size(), 1);
+        QVERIFY(QFile::exists(QDir(root).filePath(".still-clipboard")));
+        QSignalSpy ready(&archive, &ClipboardArchive::ready);
+        archive.load(archive.entries().first().id);
+        QTRY_COMPARE(ready.count(), 1);
+        QCOMPARE(qvariant_cast<ClipPayload>(ready[0][1]).text, QString("keep history"));
+    }
     void richTextAndCustomFormatsSurviveRoundTrip() {
         QMimeData mime;
         mime.setText(QStringLiteral("你好 Qt"));
@@ -35,6 +67,40 @@ private slots:
         QCOMPARE(restored->data("text/rtf"), mime.data("text/rtf"));
         QCOMPARE(restored->data("application/x-example"), mime.data("application/x-example"));
         QCOMPARE(entry.kind, QString("rich"));
+    }
+    void htmlOnlyFallbackDoesNotReadExternalResources() {
+        QTemporaryDir directory;
+        QFile stylesheet(directory.filePath("private.css")); QVERIFY(stylesheet.open(QIODevice::WriteOnly));
+        stylesheet.write("@import url('probe://local-file-was-read'); p { color: red; }"); stylesheet.close();
+        const QString local = QUrl::fromLocalFile(stylesheet.fileName()).toString();
+        const QString html = QStringLiteral("<html><head><title>Private title</title>"
+            "<link rel=\"stylesheet\" href=\"https://example.invalid/external.css\">"
+            "<link rel=\"stylesheet\" href=\"%1\">"
+            "<style>@import url('https://example.invalid/import.css'); @import url('%1');"
+            "p { background-image: url('https://example.invalid/background.png'); }</style>"
+            "</head><body background=\"%1\"><p><b>可见正文</b></p>"
+            "<img src=\"https://example.invalid/image.png\"><img src=\"%1\"></body></html>").arg(local);
+        int requestedResources = 0;
+        const auto previousProvider = QTextDocument::defaultResourceProvider();
+        const auto restoreProvider = qScopeGuard([&] { QTextDocument::setDefaultResourceProvider(previousProvider); });
+        QTextDocument::setDefaultResourceProvider([&](const QUrl &) { ++requestedResources; return QVariant(); });
+        QMimeData mime; mime.setHtml(html);
+        QString error; ClipEntry entry;
+        const auto captured = captureClipboard(mime, &error);
+        QVERIFY2(error.isEmpty(), qPrintable(error)); QVERIFY(captured.text.isEmpty()); QCOMPARE(requestedResources, 0);
+        const auto encoded = encodeClipboard(captured, &entry, &error);
+        QVERIFY2(!encoded.isEmpty(), qPrintable(error)); QCOMPARE(entry.kind, QString("rich"));
+        QVERIFY(entry.preview.contains(QStringLiteral("可见正文"))); QVERIFY(!entry.preview.contains("Private title"));
+        QCOMPARE(requestedResources, 0);
+        const auto decoded = decodeClipboard(encoded, &error);
+        QVERIFY2(error.isEmpty(), qPrintable(error)); QVERIFY(decoded.text.contains(QStringLiteral("可见正文")));
+        QCOMPARE(requestedResources, 0);
+        QCOMPARE(decoded.formats.size(), captured.formats.size());
+        for (qsizetype i = 0; i < captured.formats.size(); ++i) {
+            QCOMPARE(decoded.formats[i].name, captured.formats[i].name);
+            QCOMPARE(decoded.formats[i].data, captured.formats[i].data);
+        }
+        std::unique_ptr<QMimeData> restored(restoreClipboard(decoded)); QCOMPARE(restored->html(), html);
     }
     void fileHistoryStoresReferencesAndRestoresCopyOperation() {
         QTemporaryDir directory;

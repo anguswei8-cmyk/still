@@ -1,5 +1,6 @@
 #include "ui/i18n.h"
 #include "clipboard_data.h"
+#include "imaging/html_document.h"
 
 #include <QBuffer>
 #include <QCryptographicHash>
@@ -9,7 +10,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPixmap>
-#include <QTextDocumentFragment>
 #include <QtEndian>
 #include <algorithm>
 
@@ -131,7 +131,7 @@ QByteArray encodeClipboard(ClipPayload payload, ClipEntry *entry, QString *error
     }
     if (payload.text.isEmpty()) {
         const auto html = formatBytes(payload, "text/html");
-        if (!html.isEmpty()) payload.text = QTextDocumentFragment::fromHtml(QString::fromUtf8(html)).toPlainText();
+        if (!html.isEmpty()) payload.text = SafeHtmlDocument(QString::fromUtf8(html)).toPlainText();
     }
     bool files = !payload.urls.isEmpty();
     for (const auto &url : payload.urls) if (!url.isLocalFile()) files = false;
@@ -176,7 +176,7 @@ ClipPayload decodeClipboard(const QByteArray &bytes, QString *error) {
     result.text = QString::fromUtf8(formatBytes(result, "text/plain"));
     if (result.text.isEmpty()) {
         const auto html = formatBytes(result, "text/html");
-        if (!html.isEmpty()) result.text = QTextDocumentFragment::fromHtml(QString::fromUtf8(html)).toPlainText();
+        if (!html.isEmpty()) result.text = SafeHtmlDocument(QString::fromUtf8(html)).toPlainText();
     }
     const auto urls = formatBytes(result, "text/uri-list");
     for (const auto &line : urls.split('\n')) if (!line.trimmed().isEmpty()) result.urls.append(QUrl::fromEncoded(line.trimmed()));

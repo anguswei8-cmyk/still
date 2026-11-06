@@ -48,10 +48,11 @@ elseif(APPLE)
     set(PLATFORM_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/platform_mac.mm")
 endif()
 
-target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp)
+target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp src/imaging/html_document.cpp src/imaging/html_document.h src/storage/pin_session.cpp)
 
 # QML import scanning starts at the target's source directory, excluding .tools and build.
 add_subdirectory(src)
+target_sources(Still PRIVATE src/imaging/pin_window.cpp src/imaging/pin_window.h src/imaging/text_pin.cpp src/imaging/text_pin.h)
 if(MSVC)
     target_compile_options(still_core PUBLIC /utf-8 /W4)
 else()
@@ -65,6 +66,11 @@ if(BUILD_TESTING)
     target_link_libraries(still_export_tests PRIVATE still_core Qt6::Test)
     add_test(NAME still_export COMMAND still_export_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_export-results.txt,txt")
     set_tests_properties(still_export PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_pin_session_tests tests/pin_session_test.cpp)
+    target_link_libraries(still_pin_session_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_pin_session COMMAND still_pin_session_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_pin_session-results.txt,txt")
+    set_tests_properties(still_pin_session PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(still_tests tests/core_test.cpp)
     target_link_libraries(still_tests PRIVATE still_core Qt6::Test)
