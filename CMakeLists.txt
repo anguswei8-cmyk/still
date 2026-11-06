@@ -48,7 +48,7 @@ elseif(APPLE)
     set(PLATFORM_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/platform_mac.mm")
 endif()
 
-target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp src/imaging/html_document.cpp src/imaging/html_document.h src/storage/pin_session.cpp)
+target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp src/imaging/html_document.cpp src/imaging/html_document.h src/storage/pin_session.cpp src/clipboard/clipboard_browse.cpp src/clipboard/clipboard_browse.h)
 
 # QML import scanning starts at the target's source directory, excluding .tools and build.
 add_subdirectory(src)
@@ -86,6 +86,11 @@ if(BUILD_TESTING)
     target_link_libraries(still_backup_dialog_tests PRIVATE still_core Qt6::Widgets Qt6::Test)
     add_test(NAME still_backup_dialog COMMAND still_backup_dialog_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_backup_dialog-results.txt,txt")
     set_tests_properties(still_backup_dialog PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_clipboard_browse_tests tests/clipboard_browse_test.cpp)
+    target_link_libraries(still_clipboard_browse_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_clipboard_browse COMMAND still_clipboard_browse_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_clipboard_browse-results.txt,txt")
+    set_tests_properties(still_clipboard_browse PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(still_tests tests/core_test.cpp)
     target_link_libraries(still_tests PRIVATE still_core Qt6::Test)
