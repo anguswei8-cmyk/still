@@ -48,6 +48,8 @@ elseif(APPLE)
     set(PLATFORM_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/platform_mac.mm")
 endif()
 
+target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp)
+
 # QML import scanning starts at the target's source directory, excluding .tools and build.
 add_subdirectory(src)
 if(MSVC)
@@ -58,6 +60,12 @@ endif()
 include(CTest)
 if(BUILD_TESTING)
     find_package(Qt6 REQUIRED COMPONENTS Test)
+
+    qt_add_executable(still_export_tests tests/image_export_test.cpp)
+    target_link_libraries(still_export_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_export COMMAND still_export_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_export-results.txt,txt")
+    set_tests_properties(still_export PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
     qt_add_executable(still_tests tests/core_test.cpp)
     target_link_libraries(still_tests PRIVATE still_core Qt6::Test)
     add_test(NAME still_core COMMAND still_tests -o "${CMAKE_CURRENT_BINARY_DIR}/core-results.txt,txt")

@@ -7,8 +7,8 @@
 namespace still {
 
 QString dataDirectory();
-QString uniqueImagePath(const QString &directory);
-bool saveImage(const QImage &image, const QString &path, QString *error, qint64 maximumBytes = -1);
+QString uniqueImagePath(const QString &directory, const QString &fileName = {});
+bool saveImage(const QImage &image, const QString &path, QString *error, qint64 maximumBytes = -1, int quality = 95, int compression = -1);
 bool writeJson(const QString &path, const QJsonObject &object, QString *error = nullptr);
 QJsonObject readJson(const QString &path);
 QString historyDirectory(const QJsonObject &options = {});

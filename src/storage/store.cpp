@@ -45,14 +45,15 @@ QString dataDirectory() {
 
 QString settingsPath() { return QDir(dataDirectory()).filePath("qt-settings.json"); }
 
-QString uniqueImagePath(const QString &directory) {
-    const QString base = "still_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss_zzz");
-    QString path = QDir(directory).filePath(base + ".png");
-    for (int i = 2; QFileInfo::exists(path); ++i) path = QDir(directory).filePath(base + '-' + QString::number(i) + ".png");
+QString uniqueImagePath(const QString &directory, const QString &fileName) {
+    const QFileInfo name(fileName.isEmpty() ? "still_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss_zzz") + ".png" : fileName);
+    QString path = QDir(directory).filePath(name.fileName());
+    for (int i = 2; QFileInfo::exists(path) || QFileInfo(path).isSymLink(); ++i)
+        path = QDir(directory).filePath(name.completeBaseName() + '-' + QString::number(i) + '.' + name.suffix());
     return path;
 }
 
-bool saveImage(const QImage &image, const QString &path, QString *error, qint64 maximumBytes) {
+bool saveImage(const QImage &image, const QString &path, QString *error, qint64 maximumBytes, int quality, int compression) {
     if (image.isNull()) { if (error) *error = t("图片为空"); return false; }
     const QString suffix = QFileInfo(path).suffix().toLower();
     const QByteArray format = (suffix == "jpg" || suffix == "jpeg") ? QByteArray("jpeg") : QByteArray("png");
@@ -60,7 +61,8 @@ bool saveImage(const QImage &image, const QString &path, QString *error, qint64 
     QSaveFile file(path);
     if (!file.open(QIODevice::WriteOnly)) { if (error) *error = file.errorString(); return false; }
     QImageWriter writer(&file, format);
-    writer.setQuality(95);
+    writer.setQuality(quality);
+    if (format == "png" && compression >= 0) writer.setCompression(compression);
     if (!writer.write(image)) { if (error) *error = writer.errorString(); return false; }
     if (maximumBytes >= 0 && file.size() > maximumBytes) {
         if (error) *error = t("本次图片超过历史容量上限，未加入历史；可提高容量上限或手动保存");
