@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QFuture>
+#include <QFutureWatcher>
 #include <QImage>
 #include <QJsonObject>
 #include <QObject>
@@ -36,7 +37,9 @@ public:
     QFuture<QList<QImage>> thumbnails(QStringList paths, QSize maximumSize);
     QFuture<QImage> readImage(QString path);
     void reconfigure(const QJsonObject &options, std::function<bool(QString &)> commit);
-    bool isConfiguring() const { return configuring_; }
+    // Complete the active configuration synchronously, in write-queue order.
+    void waitForConfiguration();
+    bool isConfiguring() const { return configuration_ != nullptr; }
 signals:
     void changed();
     void errorOccurred(const QString &message);
@@ -51,10 +54,12 @@ private:
     QThreadPool readPool_;
     std::atomic<qint64> queuedBytes_{0};
     std::atomic_int queuedImages_{0};
-    bool configuring_ = false;
+    QFutureWatcher<QPair<bool, QString>> *configuration_ = nullptr;
+    QString configuringDirectory_;
     QReadWriteLock fileAccess_;
     QImage read(const QString &path, const QSize &maximumSize);
     void erase(const QString &path, bool all);
+    void completeConfiguration();
 };
 
 } // namespace still

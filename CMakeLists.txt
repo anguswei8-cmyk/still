@@ -52,7 +52,7 @@ target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/ima
 
 # QML import scanning starts at the target's source directory, excluding .tools and build.
 add_subdirectory(src)
-target_sources(Still PRIVATE src/imaging/pin_window.cpp src/imaging/pin_window.h src/imaging/text_pin.cpp src/imaging/text_pin.h)
+target_sources(Still PRIVATE src/imaging/pin_window.cpp src/imaging/pin_window.h src/imaging/text_pin.cpp src/imaging/text_pin.h src/settings/settings_draft.cpp src/settings/settings_draft.h src/settings/settings_backup.cpp src/settings/settings_backup.h src/settings/settings_backup_dialog.cpp src/settings/settings_backup_dialog.h)
 if(MSVC)
     target_compile_options(still_core PUBLIC /utf-8 /W4)
 else()
@@ -71,6 +71,21 @@ if(BUILD_TESTING)
     target_link_libraries(still_pin_session_tests PRIVATE still_core Qt6::Test)
     add_test(NAME still_pin_session COMMAND still_pin_session_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_pin_session-results.txt,txt")
     set_tests_properties(still_pin_session PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_settings_draft_tests tests/settings_draft_test.cpp src/settings/settings_draft.cpp src/settings/settings_draft.h src/settings/settings_apply.cpp src/settings/settings_apply.h src/platform/hotkeys.cpp src/platform/platform.h tests/platform_fixture.cpp)
+    target_link_libraries(still_settings_draft_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_settings_draft COMMAND still_settings_draft_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_settings_draft-results.txt,txt")
+    set_tests_properties(still_settings_draft PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_backup_tests tests/settings_backup_test.cpp src/settings/settings_backup.cpp src/settings/settings_backup.h src/settings/settings_draft.cpp src/settings/settings_draft.h src/settings/settings_apply.cpp src/settings/settings_apply.h src/platform/hotkeys.cpp src/platform/platform.h tests/platform_fixture.cpp)
+    target_link_libraries(still_backup_tests PRIVATE still_core Qt6::Widgets Qt6::Test)
+    add_test(NAME still_backup COMMAND still_backup_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_backup-results.txt,txt")
+    set_tests_properties(still_backup PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_backup_dialog_tests tests/settings_backup_dialog_test.cpp src/settings/settings_backup_dialog.cpp src/settings/settings_backup_dialog.h src/settings/settings_backup.cpp src/settings/settings_backup.h src/settings/settings_draft.cpp src/settings/settings_draft.h src/settings/settings_apply.cpp src/settings/settings_apply.h src/platform/hotkeys.cpp src/platform/platform.h tests/platform_fixture.cpp)
+    target_link_libraries(still_backup_dialog_tests PRIVATE still_core Qt6::Widgets Qt6::Test)
+    add_test(NAME still_backup_dialog COMMAND still_backup_dialog_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_backup_dialog-results.txt,txt")
+    set_tests_properties(still_backup_dialog PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(still_tests tests/core_test.cpp)
     target_link_libraries(still_tests PRIVATE still_core Qt6::Test)
@@ -107,9 +122,11 @@ if(BUILD_TESTING)
         src/app/application.cpp src/app/application.h src/platform/platform.h
         src/capture/scroll_capture_ui.cpp src/capture/scroll_capture_ui.h src/capture/overlay.cpp src/capture/overlay.h
         src/imaging/editor.cpp src/imaging/editor.h src/imaging/pin.cpp src/imaging/pin.h src/imaging/ocr.cpp src/imaging/ocr.h)
+    target_sources(still_settings_tests PRIVATE src/settings/settings_draft.cpp src/settings/settings_draft.h)
     target_link_libraries(still_settings_tests PRIVATE still_core Qt6::Widgets Qt6::Network Qt6::Concurrent Qt6::Test)
     if(WIN32)
-        target_link_libraries(still_settings_tests PRIVATE dwmapi)
+        target_sources(still_settings_tests PRIVATE src/settings/settings_draft.cpp src/settings/settings_draft.h)
+    target_link_libraries(still_settings_tests PRIVATE dwmapi)
     endif()
     still_qml(still_settings_tests)
     add_test(NAME still_settings COMMAND still_settings_tests -o "${CMAKE_CURRENT_BINARY_DIR}/settings-results.txt,txt")

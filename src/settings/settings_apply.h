@@ -12,6 +12,7 @@ class HistoryStore;
 class ClipboardArchive;
 extern const QStringList hotkeyNames;
 extern const QStringList hotkeyLabels;
+QJsonObject defaultHotkeys();
 
 class SettingsApply : public QObject {
     Q_OBJECT
@@ -19,9 +20,11 @@ public:
     SettingsApply(QJsonObject settings, QString settingsFile, Hotkeys &hotkeys, HistoryStore &history, QObject *parent = nullptr, ClipboardArchive *clipboard = nullptr);
     ~SettingsApply() override;
     const QJsonObject &settings() const { return settings_; }
+    QString filePath() const { return settingsFile_; }
     QStringList failedHotkeys() const { return failures_; }
     bool busy() const { return busy_ || pending_.has_value(); }
     void apply(QJsonObject changes);
+    bool applyBackup(QJsonObject changes, QString *error);
 signals:
     void finished(bool success, const QJsonObject &settings, const QStringList &failedHotkeys, const QString &message);
 private:
@@ -33,6 +36,7 @@ private:
     QStringList failures_;
     bool busy_ = false;
     std::optional<QJsonObject> pending_;
+    void applyCandidate(QJsonObject candidate, QStringList failures);
 };
 
 } // namespace still

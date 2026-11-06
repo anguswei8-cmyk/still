@@ -21,7 +21,17 @@ void mergeChanges(QJsonObject &settings, const QJsonObject &changes) {
 
 const QStringList hotkeyNames{"capture", "quickCapture", "fullScreen", "pasteAsPin", "togglePins", "scrollCapture", "closePins", "clipboardHistory"};
 const QStringList hotkeyLabels{t("截图并编辑"), t("快速截图复制"), t("整屏截图并贴图"),
-    t("剪贴板图片贴图"), t("显示/隐藏全部贴图"), t("滚动长截图"), t("关闭全部贴图"), t("呼出剪贴板历史")};
+    t("剪贴板内容贴图"), t("显示/隐藏全部贴图"), t("滚动长截图"), t("关闭全部贴图"), t("呼出剪贴板历史")};
+
+QJsonObject defaultHotkeys() {
+#ifdef Q_OS_WIN
+    constexpr auto clipboardHistory = "Ctrl+Alt+Space";
+#else
+    constexpr auto clipboardHistory = "Ctrl+Shift+Space";
+#endif
+    return {{"capture", "Ctrl+1"}, {"quickCapture", "Ctrl+2"}, {"fullScreen", "Ctrl+3"}, {"pasteAsPin", "Ctrl+Shift+V"},
+            {"togglePins", "Ctrl+4"}, {"scrollCapture", "Ctrl+5"}, {"closePins", "Ctrl+Shift+Q"}, {"clipboardHistory", clipboardHistory}};
+}
 
 SettingsApply::SettingsApply(QJsonObject settings, QString settingsFile, Hotkeys &hotkeys, HistoryStore &history, QObject *parent, ClipboardArchive *clipboard)
     : QObject(parent), settings_(std::move(settings)), settingsFile_(std::move(settingsFile)), hotkeys_(hotkeys), history_(history), clipboard_(clipboard) {
@@ -30,7 +40,10 @@ SettingsApply::SettingsApply(QJsonObject settings, QString settingsFile, Hotkeys
         if (!hotkeys_.bind(i, QKeySequence::fromString(bindings.value(hotkeyNames[i]).toString(), QKeySequence::PortableText))) failures_.append(t(hotkeyLabels[i]));
 }
 
-SettingsApply::~SettingsApply() { hotkeys_.discardStaged(); }
+SettingsApply::~SettingsApply() {
+    while (busy()) history_.waitForConfiguration();
+    hotkeys_.discardStaged();
+}
 
 void SettingsApply::apply(QJsonObject changes) {
     // Rebase queued changes on the committed result, including after a failed save.
@@ -40,7 +53,6 @@ void SettingsApply::apply(QJsonObject changes) {
         return;
     }
     if (history_.isConfiguring()) { emit finished(false, settings_, failures_, t("历史目录正在切换，请稍后重试")); return; }
-    busy_ = true;
     auto candidate = settings_;
     mergeChanges(candidate, changes);
     auto bindings = candidate.value("hotkeys").toObject();
@@ -54,6 +66,30 @@ void SettingsApply::apply(QJsonObject changes) {
         }
     }
     candidate["hotkeys"] = bindings;
+    applyCandidate(std::move(candidate), std::move(failures));
+}
+
+bool SettingsApply::applyBackup(QJsonObject changes, QString *error) {
+    if (busy() || history_.isConfiguring()) { *error = t("设置正在保存或迁移，请完成后重试。"); return false; }
+    auto candidate = settings_;
+    mergeChanges(candidate, changes);
+    const auto bindings = candidate.value("hotkeys").toObject();
+    QStringList failures;
+    for (int i = 0; i < hotkeyNames.size(); ++i) {
+        const auto sequence = QKeySequence::fromString(bindings.value(hotkeyNames[i]).toString(), QKeySequence::PortableText);
+        if (!hotkeys_.stage(i, sequence)) failures.append(t(hotkeyLabels[i]));
+    }
+    if (!failures.isEmpty()) {
+        hotkeys_.discardStaged();
+        *error = t("快捷键冲突，原设置已保留：") + failures.join(QStringLiteral("、"));
+        return false;
+    }
+    applyCandidate(std::move(candidate), {});
+    return true;
+}
+
+void SettingsApply::applyCandidate(QJsonObject candidate, QStringList failures) {
+    busy_ = true;
     connect(&history_, &HistoryStore::reconfigured, this, [this, candidate, failures](bool success, const QString &message) {
         if (success) {
             hotkeys_.commitStaged();

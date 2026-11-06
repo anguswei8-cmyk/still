@@ -45,7 +45,8 @@ bool copyHistory(const QString &source, const QString &destination, MigrationFil
     }
     QDir target(destination);
     const QString marker = target.filePath(".still-history");
-    if (!QFileInfo::exists(marker) && !QFileInfo::exists(target.filePath(".pixclone-history")) && !target.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System).isEmpty()) {
+    if (!QFileInfo::exists(marker) && !QFileInfo::exists(target.filePath(".pixclone-history"))
+        && !target.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System).isEmpty()) {
         error = t("请选择空文件夹或已有的 拾影历史专用文件夹，避免影响其他文件");
         return false;
     }
@@ -194,18 +195,12 @@ void HistoryStore::erase(const QString &path, bool all) {
 }
 
 void HistoryStore::reconfigure(const QJsonObject &options, std::function<bool(QString &)> commit) {
-    if (configuring_) return;
+    if (isConfiguring()) return;
     if (!commit) { emit reconfigured(false, t("缺少设置提交步骤")); return; }
-    configuring_ = true;
     auto *watcher = new QFutureWatcher<QPair<bool, QString>>(this);
-    connect(watcher, &QFutureWatcher<QPair<bool, QString>>::finished, this, [this, watcher, directory = historyDirectory(options)] {
-        const auto result = watcher->result();
-        watcher->deleteLater();
-        configuring_ = false;
-        if (result.first) directory_ = directory;
-        emit reconfigured(result.first, result.second);
-        if (result.first) emit changed();
-    });
+    configuration_ = watcher;
+    configuringDirectory_ = historyDirectory(options);
+    connect(watcher, &QFutureWatcher<QPair<bool, QString>>::finished, this, &HistoryStore::completeConfiguration);
     watcher->setFuture(QtConcurrent::run(&pool_, [this, next = options, commit = std::move(commit)]() -> QPair<bool, QString> {
         const QString requested = next.value("dir").toString().trimmed();
         if (!requested.isEmpty() && !QDir::isAbsolutePath(requested)) return {false, t("历史目录必须使用完整路径")};
@@ -238,6 +233,22 @@ void HistoryStore::reconfigure(const QJsonObject &options, std::function<bool(QS
         for (const auto &warning : {error, cleanupWarning, quotaWarning}) if (!warning.isEmpty()) warnings.append(warning);
         return {true, warnings.join('\n')};
     }));
+}
+
+void HistoryStore::waitForConfiguration() {
+    // Wait in queue order without dispatching unrelated UI events during shutdown.
+    pool_.waitForDone();
+    completeConfiguration();
+}
+
+void HistoryStore::completeConfiguration() {
+    const auto result = configuration_->result();
+    configuration_->disconnect(this);
+    configuration_->deleteLater();
+    configuration_ = nullptr;
+    if (result.first) directory_ = configuringDirectory_;
+    emit reconfigured(result.first, result.second);
+    if (result.first) emit changed();
 }
 
 } // namespace still

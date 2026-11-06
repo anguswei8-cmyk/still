@@ -133,17 +133,6 @@ std::optional<QJsonValue> settingValue(const QVariantMap &row, const QVariant &v
 }
 } // namespace
 
-QJsonObject normalizeSettings(QJsonObject form) {
-    for (int page = 1; page <= 5; ++page) for (const auto &value : fields(page)) {
-        const auto row = value.toMap(); const QString key = row.value("key").toString();
-        if (key.isEmpty()) continue;
-        const QString group = row.value("group").toString(); auto object = form.value(group).toObject();
-        const auto valid = settingValue(row, object.value(key).toVariant());
-        object[key] = valid.value_or(QJsonValue::fromVariant(row.value("defaultValue")));
-        form[group] = object;
-    }
-    return form;
-}
 namespace {
 QString kindName(const QString &kind) {
     if (kind == "image") return t("图片");

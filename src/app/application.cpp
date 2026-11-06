@@ -50,16 +50,6 @@
 
 namespace still {
 
-static QJsonObject defaultHotkeys() {
-#ifdef Q_OS_WIN
-    constexpr auto clipboardHistory = "Ctrl+Alt+Space";
-#else
-    constexpr auto clipboardHistory = "Ctrl+Shift+Space";
-#endif
-    return {{"capture", "Ctrl+1"}, {"quickCapture", "Ctrl+2"}, {"fullScreen", "Ctrl+3"}, {"pasteAsPin", "Ctrl+Shift+V"},
-            {"togglePins", "Ctrl+4"}, {"scrollCapture", "Ctrl+5"}, {"closePins", "Ctrl+Shift+Q"}, {"clipboardHistory", clipboardHistory}};
-}
-
 QString Application::settingString(const QString &group, const QString &key, const QString &fallback) const {
     return settingsApply_->settings().value(group).toObject().value(key).toString(fallback);
 }
