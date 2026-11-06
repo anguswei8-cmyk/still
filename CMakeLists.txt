@@ -48,11 +48,11 @@ elseif(APPLE)
     set(PLATFORM_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/platform_mac.mm")
 endif()
 
-target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp src/imaging/html_document.cpp src/imaging/html_document.h src/storage/pin_session.cpp src/clipboard/clipboard_browse.cpp src/clipboard/clipboard_browse.h)
+target_sources(still_core PRIVATE src/storage/image_export.cpp src/clipboard/image_copy.cpp src/imaging/html_document.cpp src/imaging/html_document.h src/storage/pin_session.cpp src/clipboard/clipboard_browse.cpp src/clipboard/clipboard_browse.h src/storage/region_presets.cpp src/storage/region_presets.h)
 
 # QML import scanning starts at the target's source directory, excluding .tools and build.
 add_subdirectory(src)
-target_sources(Still PRIVATE src/imaging/pin_window.cpp src/imaging/pin_window.h src/imaging/text_pin.cpp src/imaging/text_pin.h src/settings/settings_draft.cpp src/settings/settings_draft.h src/settings/settings_backup.cpp src/settings/settings_backup.h src/settings/settings_backup_dialog.cpp src/settings/settings_backup_dialog.h)
+target_sources(Still PRIVATE src/imaging/pin_window.cpp src/imaging/pin_window.h src/imaging/text_pin.cpp src/imaging/text_pin.h src/settings/settings_draft.cpp src/settings/settings_draft.h src/settings/settings_backup.cpp src/settings/settings_backup.h src/settings/settings_backup_dialog.cpp src/settings/settings_backup_dialog.h src/capture/capture_delay.cpp src/capture/capture_delay.h src/capture/capture_presets.cpp src/capture/capture_presets.h)
 if(MSVC)
     target_compile_options(still_core PUBLIC /utf-8 /W4)
 else()
@@ -91,6 +91,21 @@ if(BUILD_TESTING)
     target_link_libraries(still_clipboard_browse_tests PRIVATE still_core Qt6::Test)
     add_test(NAME still_clipboard_browse COMMAND still_clipboard_browse_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_clipboard_browse-results.txt,txt")
     set_tests_properties(still_clipboard_browse PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_region_presets_tests tests/region_presets_test.cpp)
+    target_link_libraries(still_region_presets_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_region_presets COMMAND still_region_presets_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_region_presets-results.txt,txt")
+    set_tests_properties(still_region_presets PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_capture_presets_tests tests/capture_presets_test.cpp src/capture/capture_presets.cpp src/capture/capture_presets.h)
+    target_link_libraries(still_capture_presets_tests PRIVATE still_core Qt6::Widgets Qt6::Test)
+    add_test(NAME still_capture_presets COMMAND still_capture_presets_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_capture_presets-results.txt,txt")
+    set_tests_properties(still_capture_presets PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    qt_add_executable(still_delay_tests tests/capture_delay_test.cpp src/capture/capture_delay.cpp src/capture/capture_delay.h)
+    target_link_libraries(still_delay_tests PRIVATE still_core Qt6::Widgets Qt6::Test)
+    add_test(NAME still_delay COMMAND still_delay_tests -o "${CMAKE_CURRENT_BINARY_DIR}/still_delay-results.txt,txt")
+    set_tests_properties(still_delay PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     qt_add_executable(still_tests tests/core_test.cpp)
     target_link_libraries(still_tests PRIVATE still_core Qt6::Test)
