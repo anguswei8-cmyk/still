@@ -28,6 +28,7 @@ function(still_qml target)
 endfunction()
 
 add_library(still_core STATIC
+    src/app/instance_request.cpp src/app/instance_request.h
     src/imaging/image.cpp src/imaging/html_document.cpp src/imaging/html_document.h
     src/storage/store.cpp src/storage/history.cpp src/storage/history.h src/storage/image_export.cpp src/storage/pin_session.cpp
     src/storage/region_presets.cpp src/storage/region_presets.h
@@ -73,6 +74,9 @@ endif()
 include(CTest)
 if(BUILD_TESTING)
     find_package(Qt6 REQUIRED COMPONENTS Test)
+    qt_add_executable(still_instance_request_tests tests/instance_request_test.cpp)
+    target_link_libraries(still_instance_request_tests PRIVATE still_core Qt6::Test)
+    add_test(NAME still_instance_request COMMAND still_instance_request_tests -o "${CMAKE_CURRENT_BINARY_DIR}/instance-request-results.txt,txt")
     qt_add_executable(still_api_client_tests tests/api_proofreader_test.cpp src/imaging/api_proofreader.cpp src/imaging/api_proofreader.h)
     target_link_libraries(still_api_client_tests PRIVATE still_core Qt6::Network Qt6::Test)
     add_test(NAME still_api_client COMMAND still_api_client_tests -o "${CMAKE_CURRENT_BINARY_DIR}/api-client-results.txt,txt")
