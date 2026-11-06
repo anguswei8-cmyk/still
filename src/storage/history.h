@@ -10,7 +10,7 @@
 #include <atomic>
 #include <functional>
 
-namespace pixclone {
+namespace still {
 
 struct HistoryEntry {
     QString path;
@@ -57,4 +57,4 @@ private:
     void erase(const QString &path, bool all);
 };
 
-} // namespace pixclone
+} // namespace still

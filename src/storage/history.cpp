@@ -15,7 +15,7 @@
 #include <QUuid>
 #include <QtConcurrentRun>
 
-namespace pixclone {
+namespace still {
 namespace {
 
 QString normalizedPath(const QString &path) {
@@ -44,8 +44,8 @@ bool copyHistory(const QString &source, const QString &destination, MigrationFil
         return false;
     }
     QDir target(destination);
-    const QString marker = target.filePath(".pixclone-history");
-    if (!QFileInfo::exists(marker) && !target.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System).isEmpty()) {
+    const QString marker = target.filePath(".still-history");
+    if (!QFileInfo::exists(marker) && !QFileInfo::exists(target.filePath(".pixclone-history")) && !target.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System).isEmpty()) {
         error = t("请选择空文件夹或已有的 拾影历史专用文件夹，避免影响其他文件");
         return false;
     }
@@ -227,7 +227,7 @@ void HistoryStore::reconfigure(const QJsonObject &options, std::function<bool(QS
                 cleanupWarning = t("新目录已启用，部分旧副本未删除，可核对后手动清理");
         }
         if (!copied.isEmpty()) {
-            QFile marker(QDir(source).filePath(".pixclone-history"));
+            QFile marker(QDir(source).filePath(".still-history"));
             if (marker.open(QIODevice::WriteOnly)) marker.close();
         }
         lastHash_.clear();
@@ -240,4 +240,4 @@ void HistoryStore::reconfigure(const QJsonObject &options, std::function<bool(QS
     }));
 }
 
-} // namespace pixclone
+} // namespace still

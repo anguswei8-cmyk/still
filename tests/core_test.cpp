@@ -9,7 +9,7 @@
 #include <QScopeGuard>
 #include <QTest>
 
-using namespace pixclone;
+using namespace still;
 
 static QImage page(int width = 60, int height = 360) {
     QImage image(width, height, QImage::Format_ARGB32);
@@ -178,23 +178,48 @@ private slots:
         QVERIFY(writeJson(path, object));
         QCOMPARE(readJson(path), object);
     }
+    void dataDirectoryOverridesAndImageNamesUseStill() {
+        QTemporaryDir dir;
+        const QByteArray current = qgetenv("STILL_DATA_DIR"), legacy = qgetenv("PIXCLONE_DATA_DIR");
+        const auto restore = qScopeGuard([=] {
+            if (current.isNull()) qunsetenv("STILL_DATA_DIR"); else qputenv("STILL_DATA_DIR", current);
+            if (legacy.isNull()) qunsetenv("PIXCLONE_DATA_DIR"); else qputenv("PIXCLONE_DATA_DIR", legacy);
+        });
+        qunsetenv("STILL_DATA_DIR");
+        qputenv("PIXCLONE_DATA_DIR", dir.filePath("old").toUtf8());
+        QCOMPARE(dataDirectory(), dir.filePath("old"));
+        qputenv("STILL_DATA_DIR", dir.filePath("new").toUtf8());
+        QCOMPARE(dataDirectory(), dir.filePath("new"));
+        QVERIFY(QFileInfo(uniqueImagePath(dir.path())).fileName().startsWith("still_"));
+    }
     void legacyRoamingDataDirectoryIsReused() {
 #ifdef Q_OS_WIN
         QTemporaryDir dir;
         const QByteArray previousLocal = qgetenv("LOCALAPPDATA");
         const QByteArray previousRoaming = qgetenv("APPDATA");
-        const QByteArray previousOverride = qgetenv("PIXCLONE_DATA_DIR");
+        const QByteArray previousOverride = qgetenv("STILL_DATA_DIR");
+        const QByteArray previousLegacyOverride = qgetenv("PIXCLONE_DATA_DIR");
         const auto restore = qScopeGuard([=] {
             qputenv("LOCALAPPDATA", previousLocal);
             qputenv("APPDATA", previousRoaming);
-            if (previousOverride.isNull()) qunsetenv("PIXCLONE_DATA_DIR"); else qputenv("PIXCLONE_DATA_DIR", previousOverride);
+            if (previousOverride.isNull()) qunsetenv("STILL_DATA_DIR"); else qputenv("STILL_DATA_DIR", previousOverride);
+            if (previousLegacyOverride.isNull()) qunsetenv("PIXCLONE_DATA_DIR"); else qputenv("PIXCLONE_DATA_DIR", previousLegacyOverride);
         });
         qputenv("LOCALAPPDATA", dir.filePath("local").toUtf8());
         qputenv("APPDATA", dir.filePath("roaming").toUtf8());
+        qunsetenv("STILL_DATA_DIR");
         qunsetenv("PIXCLONE_DATA_DIR");
         const QString expected = dir.filePath("roaming/PixClone");
         QVERIFY(writeJson(QDir(expected).filePath("settings.json"), {{"version", 1}}));
         QCOMPARE(dataDirectory(), expected);
+        const QString oldLocal = dir.filePath("local/PixClone"), newLocal = dir.filePath("local/Still");
+        QVERIFY(writeJson(QDir(oldLocal).filePath("Clipboard/index.json"), {{"version", 1}}));
+        QCOMPARE(dataDirectory(), oldLocal);
+        QVERIFY(writeJson(QDir(newLocal).filePath("qt-settings.json"), {{"version", 1}}));
+        QCOMPARE(dataDirectory(), newLocal);
+        QVERIFY(QFile::remove(QDir(newLocal).filePath("qt-settings.json")));
+        QVERIFY(writeJson(QDir(newLocal).filePath("PinSessions/session.json"), {{"version", 1}}));
+        QCOMPARE(dataDirectory(), newLocal);
 #endif
     }
     void historyCanReadLegacyFilesWithoutRewritingIndex() {

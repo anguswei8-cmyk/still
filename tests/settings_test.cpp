@@ -42,8 +42,8 @@
 #include <qt_windows.h>
 #endif
 
-using namespace pixclone;
-namespace pixclone { void setPasteTargetForTest(quintptr target); quintptr lastPasteTargetForTest(); }
+using namespace still;
+namespace still { void setPasteTargetForTest(quintptr target); quintptr lastPasteTargetForTest(); }
 static QQuickItem *findItem(QQuickItem *root, const QString &name) {
     if (!root) return nullptr;
     if (root->objectName() == name) return root;

@@ -9,7 +9,7 @@
 #include <QTest>
 #include <QTimer>
 
-using namespace pixclone;
+using namespace still;
 
 static QJsonObject preferences(const QString &directory, bool enabled = true) {
     return {{"dir", directory}, {"enabled", enabled}, {"maxItems", 200}, {"maxMiB", 1024}};
@@ -164,7 +164,13 @@ private slots:
         QVERIFY(!saved[0][0].toBool());
         QCOMPARE(QImage(QDir(source).filePath("original.png")), image());
     }
+    void migrationProtectsOtherFoldersAndNameCollisions_data() {
+        QTest::addColumn<QString>("markerName");
+        QTest::newRow("still") << QString(".still-history");
+        QTest::newRow("legacy") << QString(".pixclone-history");
+    }
     void migrationProtectsOtherFoldersAndNameCollisions() {
+        QFETCH(QString, markerName);
         QTemporaryDir directory;
         const auto source = directory.filePath("old"), target = directory.filePath("new");
         QVERIFY(saveImage(image(Qt::red), QDir(source).filePath("same.png"), nullptr));
@@ -176,7 +182,7 @@ private slots:
         QVERIFY(!saved[0][0].toBool());
         QCOMPARE(QImage(QDir(target).filePath("same.png")), image(Qt::blue));
         QVERIFY(QFile::exists(QDir(source).filePath("same.png")));
-        QFile marker(QDir(target).filePath(".pixclone-history"));
+        QFile marker(QDir(target).filePath(markerName));
         QVERIFY(marker.open(QIODevice::WriteOnly));
         marker.close();
         configure(store, preferences(target), directory.filePath("settings.json"));
@@ -185,6 +191,7 @@ private slots:
         QCOMPARE(historyFiles(target).size(), 2);
         QCOMPARE(QImage(QDir(target).filePath("same.png")), image(Qt::blue));
         QVERIFY(historyFiles(source).isEmpty());
+        QVERIFY(QFile::exists(QDir(target).filePath(".still-history")));
     }
     void migrationRejectsNestedAndRelativeDirectories() {
         QTemporaryDir directory;

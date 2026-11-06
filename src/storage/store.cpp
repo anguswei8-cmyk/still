@@ -11,32 +11,42 @@
 #include <QStandardPaths>
 #include <QUuid>
 
-namespace pixclone {
+namespace still {
 
 QString dataDirectory() {
-    const QString overridePath = qEnvironmentVariable("PIXCLONE_DATA_DIR");
+    const QString overridePath = qEnvironmentVariable("STILL_DATA_DIR", qEnvironmentVariable("PIXCLONE_DATA_DIR"));
     if (!overridePath.isEmpty()) return QDir(overridePath).absolutePath();
-#ifdef Q_OS_WIN
-    const QString local = qEnvironmentVariable("LOCALAPPDATA");
-    const QString roaming = qEnvironmentVariable("APPDATA");
-    const QString localPath = QDir(local).filePath("PixClone");
-    const QString roamingPath = QDir(roaming).filePath("PixClone");
     auto hasData = [](const QString &path) {
         return QFileInfo::exists(QDir(path).filePath("qt-settings.json"))
             || QFileInfo::exists(QDir(path).filePath("settings.json"))
-            || QDir(QDir(path).filePath("History")).exists();
+            || QDir(QDir(path).filePath("History")).exists()
+            || QFileInfo::exists(QDir(path).filePath("Clipboard/index.json"))
+            || QFileInfo::exists(QDir(path).filePath("region-presets.json"))
+            || QFileInfo::exists(QDir(path).filePath("PinSessions/session.json"));
     };
-    // Electron defaults to roaming AppData, despite the old handover claiming LocalAppData.
-    if (!roaming.isEmpty() && hasData(roamingPath) && (local.isEmpty() || !hasData(localPath))) return roamingPath;
-    if (!local.isEmpty()) return localPath;
+    QString currentPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QStringList legacyPaths;
+#ifdef Q_OS_WIN
+    const QString local = qEnvironmentVariable("LOCALAPPDATA");
+    const QString roaming = qEnvironmentVariable("APPDATA");
+    if (!local.isEmpty()) {
+        currentPath = QDir(local).filePath("Still");
+        legacyPaths.append(QDir(local).filePath("PixClone"));
+    }
+    if (!roaming.isEmpty()) legacyPaths.append(QDir(roaming).filePath("PixClone"));
+#else
+    legacyPaths.append(QDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)).filePath("PixClone/PixClone"));
 #endif
-    return QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    // Reuse existing data in place; changing the brand must not reset settings or history.
+    if (hasData(currentPath)) return currentPath;
+    for (const auto &path : legacyPaths) if (hasData(path)) return path;
+    return currentPath;
 }
 
 QString settingsPath() { return QDir(dataDirectory()).filePath("qt-settings.json"); }
 
 QString uniqueImagePath(const QString &directory) {
-    const QString base = "pixclone_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss_zzz");
+    const QString base = "still_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss_zzz");
     QString path = QDir(directory).filePath(base + ".png");
     for (int i = 2; QFileInfo::exists(path); ++i) path = QDir(directory).filePath(base + '-' + QString::number(i) + ".png");
     return path;
@@ -117,4 +127,4 @@ QString addHistory(const QImage &image, int maximum, QString *error, const QStri
     return path;
 }
 
-} // namespace pixclone
+} // namespace still

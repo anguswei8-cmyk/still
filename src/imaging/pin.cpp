@@ -25,7 +25,7 @@
 #include <QWheelEvent>
 #include <limits>
 
-namespace pixclone {
+namespace still {
 namespace {
 class PromptCheckBox : public QCheckBox {
 public:
@@ -309,4 +309,4 @@ bool Pin::event(QEvent *event) {
     return QWidget::event(event);
 }
 
-} // namespace pixclone
+} // namespace still

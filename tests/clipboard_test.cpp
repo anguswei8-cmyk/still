@@ -11,7 +11,7 @@
 #include <QTemporaryDir>
 #include <QTest>
 
-using namespace pixclone;
+using namespace still;
 
 static QJsonObject options(const QString &root) { return {{"dir", root}, {"maxItems", 200}, {"maxMiB", 256}}; }
 static ClipPayload text(const QString &value) { QMimeData mime; mime.setText(value); return captureClipboard(mime); }

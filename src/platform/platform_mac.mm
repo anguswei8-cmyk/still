@@ -10,7 +10,7 @@
 #include <QScreen>
 #include <unistd.h>
 
-namespace pixclone {
+namespace still {
 bool excludeWindowFromCapture(quintptr) { return false; }
 
 quintptr currentPasteTarget() { return quintptr(NSWorkspace.sharedWorkspace.frontmostApplication.processIdentifier); }
@@ -155,4 +155,4 @@ quintptr Hotkeys::registerSequence(const QKeySequence &sequence, int nativeId) {
 void Hotkeys::releaseRegistration(quintptr handle) { UnregisterEventHotKey(reinterpret_cast<EventHotKeyRef>(handle)); }
 bool Hotkeys::nativeEventFilter(const QByteArray &, void *, qintptr *) { return false; }
 
-} // namespace pixclone
+} // namespace still

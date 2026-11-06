@@ -5,7 +5,7 @@
 #include "storage/store.h"
 #include "clipboard/clipboard_archive.h"
 
-namespace pixclone {
+namespace still {
 
 namespace {
 void mergeChanges(QJsonObject &settings, const QJsonObject &changes) {
@@ -81,4 +81,4 @@ void SettingsApply::apply(QJsonObject changes) {
     });
 }
 
-} // namespace pixclone
+} // namespace still

@@ -6,7 +6,7 @@
 
 class QWidget;
 
-namespace pixclone {
+namespace still {
 
 enum class ClipAction { Paste, Copy, PlainPaste, EditImage, PinImage, SaveImage };
 
@@ -50,6 +50,6 @@ private:
     void capture();
 };
 
-} // namespace pixclone
+} // namespace still
 
-Q_DECLARE_METATYPE(pixclone::ClipAction)
+Q_DECLARE_METATYPE(still::ClipAction)

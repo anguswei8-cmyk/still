@@ -5,7 +5,7 @@
 #include <QStringList>
 #include <optional>
 
-namespace pixclone {
+namespace still {
 
 class Hotkeys;
 class HistoryStore;
@@ -35,4 +35,4 @@ private:
     std::optional<QJsonObject> pending_;
 };
 
-} // namespace pixclone
+} // namespace still

@@ -5,7 +5,7 @@
 #include <QFutureWatcher>
 #include <QtConcurrentRun>
 
-namespace pixclone {
+namespace still {
 
 ScrollSession::ScrollSession(Capture capture, QObject *parent) : QObject(parent), capture_(std::move(capture)) {
     connect(&timer_, &QTimer::timeout, this, &ScrollSession::sample);
@@ -70,4 +70,4 @@ void ScrollSession::sample() {
     }));
 }
 
-} // namespace pixclone
+} // namespace still

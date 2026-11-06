@@ -4,7 +4,7 @@
 #include <QJsonObject>
 #include <QString>
 
-namespace pixclone {
+namespace still {
 
 QString dataDirectory();
 QString uniqueImagePath(const QString &directory);
@@ -17,4 +17,4 @@ QStringList historyFiles(const QString &directory = {});
 bool pruneHistory(const QString &directory, int maximum, qint64 maximumBytes, QString *error, const QString &newest = {});
 QString settingsPath();
 
-} // namespace pixclone
+} // namespace still

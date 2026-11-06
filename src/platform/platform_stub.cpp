@@ -2,7 +2,7 @@
 #include "platform.h"
 #include <QScreen>
 
-namespace pixclone {
+namespace still {
 quintptr currentPasteTarget() { return 0; }
 bool excludeWindowFromCapture(quintptr) { return false; }
 bool activatePasteTarget(quintptr) { return false; }
@@ -15,4 +15,4 @@ Hotkeys::~Hotkeys() = default;
 quintptr Hotkeys::registerSequence(const QKeySequence &, int) { return 0; }
 void Hotkeys::releaseRegistration(quintptr) {}
 bool Hotkeys::nativeEventFilter(const QByteArray &, void *, qintptr *) { return false; }
-} // namespace pixclone
+} // namespace still

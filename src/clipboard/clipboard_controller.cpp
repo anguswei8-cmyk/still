@@ -9,8 +9,8 @@
 #include <QUuid>
 #include <QWidget>
 
-namespace pixclone {
-namespace { constexpr auto marker = "application/x-pixclone-clipboard-id"; }
+namespace still {
+namespace { constexpr auto marker = "application/x-still-clipboard-id"; }
 
 ClipboardController::ClipboardController(ClipboardArchive &archive, QJsonObject options, bool monitor, QObject *parent)
     : QObject(parent), archive_(archive) {
@@ -112,4 +112,4 @@ void ClipboardController::capture() {
     else if (!payload.empty()) archive_.add(payload);
 }
 
-} // namespace pixclone
+} // namespace still

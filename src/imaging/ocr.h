@@ -3,7 +3,7 @@
 #include "image.h"
 #include <QObject>
 
-namespace pixclone {
+namespace still {
 
 class OcrJob : public QObject {
     Q_OBJECT
@@ -11,11 +11,11 @@ public:
     explicit OcrJob(const QImage &image, const QString &language, QObject *parent);
     ~OcrJob() override;
 signals:
-    void finished(const pixclone::OcrResult &result);
+    void finished(const still::OcrResult &result);
 private:
     QImage image_;
     QString language_;
     static void startPending();
 };
 
-} // namespace pixclone
+} // namespace still

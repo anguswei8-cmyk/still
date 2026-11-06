@@ -13,7 +13,7 @@
 #include <QPainter>
 #include <QToolButton>
 
-namespace pixclone {
+namespace still {
 
 Overlay::Overlay(CaptureFrame frame, QString mode, bool magnifier)
     : QWidget(nullptr, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint), frame_(std::move(frame)), mode_(std::move(mode)), magnifier_(magnifier), toolbar_(new QWidget(this)) {
@@ -206,4 +206,4 @@ void Overlay::closeEvent(QCloseEvent *event) {
     event->accept();
 }
 
-} // namespace pixclone
+} // namespace still

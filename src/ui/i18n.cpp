@@ -6,7 +6,7 @@
 #include <QPalette>
 #include <QStyleHints>
 
-namespace pixclone {
+namespace still {
 InterfacePreferences::Catalog::Catalog() {
     QFile file(":/brand/en.json");
     if (file.open(QIODevice::ReadOnly)) entries = QJsonDocument::fromJson(file.readAll()).object();
@@ -67,4 +67,4 @@ void InterfacePreferences::updatePalette() {
     palette.setColor(QPalette::Disabled, QPalette::ButtonText, palette.color(QPalette::Disabled, QPalette::Text));
     QGuiApplication::setPalette(palette);
 }
-} // namespace pixclone
+} // namespace still

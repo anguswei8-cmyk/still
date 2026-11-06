@@ -6,7 +6,7 @@
 #include <QThreadPool>
 #include <QtConcurrentRun>
 
-namespace pixclone {
+namespace still {
 
 namespace {
 struct OcrQueue {
@@ -49,4 +49,4 @@ void OcrJob::startPending() {
     }
 }
 
-} // namespace pixclone
+} // namespace still

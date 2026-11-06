@@ -3,6 +3,7 @@ dist/
 out/
 *.log
 .cache/
+.idea/
 userData/
 build*/
 .tools/

@@ -1,6 +1,6 @@
 #include "platform.h"
 
-namespace pixclone {
+namespace still {
 
 bool Hotkeys::bind(int id, const QKeySequence &sequence) {
     if (!staged_.isEmpty() || !stage(id, sequence)) return false;
@@ -51,4 +51,4 @@ bool Hotkeys::dispatchNative(int nativeId) {
     return true;
 }
 
-} // namespace pixclone
+} // namespace still

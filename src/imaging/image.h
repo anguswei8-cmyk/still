@@ -7,7 +7,7 @@
 #include <QString>
 #include <QVector>
 
-namespace pixclone {
+namespace still {
 
 enum class Tool { Rectangle, RoundedRectangle, Ellipse, Line, Arrow, Pen, Highlight, Mosaic, MosaicPen, Text, Number };
 
@@ -57,4 +57,4 @@ OcrResult parseOcr(const QByteArray &json, const QSize &imageSize);
 int findOverlap(const QImage &accumulated, const QImage &next);
 QImage appendScrollFrame(const QImage &accumulated, const QImage &next, int maximumHeight = 24000, qint64 maximumBytes = 256LL * 1024 * 1024, bool *unmatched = nullptr);
 
-} // namespace pixclone
+} // namespace still

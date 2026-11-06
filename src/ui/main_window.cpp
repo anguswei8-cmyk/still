@@ -38,7 +38,7 @@
 #include <dwmapi.h>
 #endif
 
-namespace pixclone {
+namespace still {
 namespace {
 // Match Main.qml's sidebar and the two content margins when deciding whether preview fits.
 constexpr int clipboardInsets = 176 + 2 * 24;
@@ -259,7 +259,7 @@ MainWindow::MainWindow(SettingsApply &settings, HistoryStore &history, Clipboard
     });
     if (!settings_.failedHotkeys().isEmpty()) { statusError_ = true; status_ = t("快捷键未注册：") + settings_.failedHotkeys().join(QStringLiteral("、")); }
     refreshClips();
-    view_->setSource(QUrl("qrc:/qt/qml/PixClone/Main.qml"));
+    view_->setSource(QUrl("qrc:/qt/qml/Still/Main.qml"));
     if (view_->status() == QQuickWidget::Error) for (const auto &error : view_->errors()) qCritical().noquote() << error.toString();
 }
 
@@ -501,4 +501,4 @@ void MainWindow::resizeEvent(QResizeEvent *event) {
     QDialog::resizeEvent(event);
     if (images_ && (event->oldSize().width() - clipboardInsets >= 660) != (width() - clipboardInsets >= 660)) updatePreview();
 }
-} // namespace pixclone
+} // namespace still

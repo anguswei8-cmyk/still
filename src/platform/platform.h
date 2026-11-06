@@ -8,7 +8,7 @@
 
 class QScreen;
 
-namespace pixclone {
+namespace still {
 
 OcrResult recognizeNative(const QImage &image, const QString &language);
 QVector<QRect> windowRectangles(QScreen *screen);
@@ -45,4 +45,4 @@ private:
     void releaseRegistration(quintptr handle);
 };
 
-} // namespace pixclone
+} // namespace still

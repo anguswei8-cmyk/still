@@ -7,8 +7,8 @@
 #include <QTest>
 #include <QWidget>
 
-using namespace pixclone;
-namespace pixclone { void setPasteTargetForTest(quintptr target); quintptr lastPasteTargetForTest(); }
+using namespace still;
+namespace still { void setPasteTargetForTest(quintptr target); quintptr lastPasteTargetForTest(); }
 static ClipPayload textPayload(const QString &text) { QMimeData mime; mime.setText(text); return captureClipboard(mime); }
 
 class ClipboardUiTest : public QObject {

@@ -10,7 +10,7 @@
 
 class QQuickWidget;
 
-namespace pixclone {
+namespace still {
 class ClipboardArchive;
 class ClipboardController;
 class SettingsApply;
@@ -155,4 +155,4 @@ private:
     void showMessage(const QString &message);
     void updateBackdrop();
 };
-} // namespace pixclone
+} // namespace still

@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <cmath>
 
-namespace pixclone {
+namespace still {
 
 ImageDocument::ImageDocument(QImage image) : original_(image.convertToFormat(QImage::Format_ARGB32)) {
     original_.setDevicePixelRatio(1);
@@ -244,4 +244,4 @@ QImage appendScrollFrame(const QImage &accumulated, const QImage &next, int maxi
     return output;
 }
 
-} // namespace pixclone
+} // namespace still

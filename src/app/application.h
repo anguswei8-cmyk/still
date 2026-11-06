@@ -8,7 +8,7 @@
 
 class QDialog;
 
-namespace pixclone {
+namespace still {
 
 class Editor;
 class Overlay;
@@ -68,4 +68,4 @@ private:
     void applyPinSettings();
 };
 
-} // namespace pixclone
+} // namespace still

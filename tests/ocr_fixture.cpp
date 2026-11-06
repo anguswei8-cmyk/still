@@ -5,7 +5,7 @@
 std::atomic_bool ocrBlocked{false};
 std::atomic_int ocrStarted{0};
 
-namespace pixclone {
+namespace still {
 OcrResult recognizeNative(const QImage &image, const QString &) {
     ++ocrStarted;
     while (ocrBlocked) QThread::msleep(1);
@@ -13,4 +13,4 @@ OcrResult recognizeNative(const QImage &image, const QString &) {
     if (image.width() == 200) return {{{"Old", QRectF(10, 10, 40, 20), 0}}, {}};
     return {{{"Hello", QRectF(10, 10, 40, 20), 0}, {"Qt", QRectF(60, 10, 40, 20), 0}, {"Next", QRectF(10, 50, 40, 20), 1}}, {}};
 }
-} // namespace pixclone
+} // namespace still

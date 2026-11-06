@@ -10,8 +10,8 @@
 #include <QTemporaryDir>
 #include <QTest>
 
-using namespace pixclone;
-namespace pixclone { int nativeIdForTest(const QKeySequence &sequence); }
+using namespace still;
+namespace still { int nativeIdForTest(const QKeySequence &sequence); }
 
 static QJsonObject preferences(const QString &directory, const QString &key = "Ctrl+1") {
     return {{"hotkeys", QJsonObject{{"capture", key}}}, {"history", QJsonObject{{"dir", directory}}}};

@@ -6,7 +6,7 @@
 #include <QVector>
 #include <QUrl>
 
-namespace pixclone {
+namespace still {
 
 struct ClipFormat { QString name; QByteArray data; };
 struct ClipPayload {
@@ -37,4 +37,4 @@ QByteArray encodeClipboard(ClipPayload payload, ClipEntry *entry, QString *error
 ClipPayload decodeClipboard(const QByteArray &bytes, QString *error);
 QString missingClipboardFiles(const ClipPayload &payload);
 
-} // namespace pixclone
+} // namespace still

@@ -9,7 +9,7 @@
 #include <functional>
 #include <memory>
 
-namespace pixclone {
+namespace still {
 
 class ClipboardArchive : public QObject {
     Q_OBJECT
@@ -32,7 +32,7 @@ public:
 signals:
     void changed();
     void errorOccurred(const QString &message);
-    void ready(const QString &id, const pixclone::ClipPayload &payload, const QString &error, ReadPurpose purpose);
+    void ready(const QString &id, const still::ClipPayload &payload, const QString &error, ReadPurpose purpose);
 private:
     struct State;
     struct Result;
@@ -46,6 +46,6 @@ private:
     void enqueue(std::function<Result(State &)> operation);
 };
 
-} // namespace pixclone
+} // namespace still
 
-Q_DECLARE_METATYPE(pixclone::ClipPayload)
+Q_DECLARE_METATYPE(still::ClipPayload)

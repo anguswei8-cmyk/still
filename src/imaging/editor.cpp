@@ -22,7 +22,7 @@
 #include <QToolBar>
 #include <QToolButton>
 
-namespace pixclone {
+namespace still {
 
 bool saveWithDialog(QWidget *parent, const QImage &image, const QString &directory) {
     const QString folder = directory.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::PicturesLocation) : directory;
@@ -232,4 +232,4 @@ void Editor::recognize() {
     });
 }
 
-} // namespace pixclone
+} // namespace still

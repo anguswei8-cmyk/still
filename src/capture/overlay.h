@@ -3,7 +3,7 @@
 #include <QImage>
 #include <QWidget>
 
-namespace pixclone {
+namespace still {
 
 struct CaptureFrame { QImage image; QRect geometry; QVector<QRect> windows; };
 
@@ -39,4 +39,4 @@ private:
     void placeToolbar();
 };
 
-} // namespace pixclone
+} // namespace still

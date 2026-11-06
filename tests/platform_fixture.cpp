@@ -1,7 +1,7 @@
 #include "platform/platform.h"
 #include <QScreen>
 
-namespace pixclone {
+namespace still {
 bool excludeWindowFromCapture(quintptr) { return false; }
 static quintptr pasteTarget = 1;
 static quintptr lastPasteTarget = 0;
@@ -24,4 +24,4 @@ quintptr Hotkeys::registerSequence(const QKeySequence &sequence, int nativeId) {
 void Hotkeys::releaseRegistration(quintptr handle) { claims.remove(handle); }
 int nativeIdForTest(const QKeySequence &sequence) { return int(claims.key(sequence, 0)); }
 bool Hotkeys::nativeEventFilter(const QByteArray &, void *, qintptr *) { return false; }
-} // namespace pixclone
+} // namespace still

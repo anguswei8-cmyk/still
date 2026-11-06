@@ -25,7 +25,7 @@
 extern std::atomic_bool ocrBlocked;
 extern std::atomic_int ocrStarted;
 
-using namespace pixclone;
+using namespace still;
 
 static QImage whiteImage(int width = 300) {
     QImage image(width, 150, QImage::Format_ARGB32);

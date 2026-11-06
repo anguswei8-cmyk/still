@@ -15,7 +15,7 @@
 #include <QOperatingSystemVersion>
 #include <QTemporaryDir>
 
-namespace pixclone {
+namespace still {
 
 quintptr currentPasteTarget() { return reinterpret_cast<quintptr>(GetForegroundWindow()); }
 bool excludeWindowFromCapture(quintptr windowId) {
@@ -147,4 +147,4 @@ bool Hotkeys::nativeEventFilter(const QByteArray &, void *message, qintptr *resu
     return true;
 }
 
-} // namespace pixclone
+} // namespace still

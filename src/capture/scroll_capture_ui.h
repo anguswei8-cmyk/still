@@ -6,7 +6,7 @@
 class QLabel;
 class QScrollArea;
 
-namespace pixclone {
+namespace still {
 
 class ScrollCaptureUi : public QWidget {
     Q_OBJECT
@@ -34,4 +34,4 @@ private:
     bool followPreview_ = true;
 };
 
-} // namespace pixclone
+} // namespace still

@@ -13,7 +13,7 @@
 #include <QtEndian>
 #include <algorithm>
 
-namespace pixclone {
+namespace still {
 namespace {
 constexpr qint64 maxBytes = 32LL * 1024 * 1024;
 constexpr qint64 maxImagePixels = 32LL * 1024 * 1024;
@@ -23,7 +23,8 @@ bool virtualFile(const QString &name) {
     return name.contains("FileContents", Qt::CaseInsensitive) || name.contains("FileGroupDescriptor", Qt::CaseInsensitive);
 }
 bool transientFormat(const QString &name) {
-    return name.startsWith("application/x-pixclone-") || name.contains("Ole Private Data", Qt::CaseInsensitive)
+    return name.startsWith("application/x-still-") || name.startsWith("application/x-pixclone-")
+        || name.contains("Ole Private Data", Qt::CaseInsensitive)
         || name.contains("DataObject", Qt::CaseInsensitive) || name == "application/x-qt-image";
 }
 bool copyEffect(const QString &name) {
@@ -201,4 +202,4 @@ QString missingClipboardFiles(const ClipPayload &payload) {
     return missing.isEmpty() ? QString() : t("文件已移动或删除：") + missing.mid(0, 3).join(QStringLiteral("、"));
 }
 
-} // namespace pixclone
+} // namespace still

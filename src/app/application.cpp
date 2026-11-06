@@ -48,7 +48,7 @@
 #include <QVBoxLayout>
 #include <algorithm>
 
-namespace pixclone {
+namespace still {
 
 static QJsonObject defaultHotkeys() {
 #ifdef Q_OS_WIN
@@ -424,4 +424,4 @@ void Application::finishScroll(const QImage &image, const QRect &region, const Q
     if (!message.isEmpty()) notify(message, true);
 }
 
-} // namespace pixclone
+} // namespace still

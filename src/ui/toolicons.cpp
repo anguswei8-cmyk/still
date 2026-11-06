@@ -6,7 +6,7 @@
 #include <QGuiApplication>
 #include <QPalette>
 
-namespace pixclone {
+namespace still {
 namespace {
 
 class ToolIconEngine final : public QIconEngine {
@@ -230,4 +230,4 @@ QString toolbarStyleSheet() {
     )");
 }
 
-} // namespace pixclone
+} // namespace still

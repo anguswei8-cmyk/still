@@ -8,7 +8,7 @@
 
 template<class T> class QFutureWatcher;
 
-namespace pixclone {
+namespace still {
 
 struct ScrollOptions {
     int intervalMs = 420;
@@ -44,4 +44,4 @@ private:
     void finish(const QString &message);
 };
 
-} // namespace pixclone
+} // namespace still

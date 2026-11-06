@@ -16,7 +16,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 
-namespace pixclone {
+namespace still {
 namespace {
 class ScrollToolbar : public QWidget {
 public:
@@ -199,4 +199,4 @@ void ScrollCaptureUi::changeEvent(QEvent *event) {
 void ScrollCaptureUi::showEvent(QShowEvent *event) { QWidget::showEvent(event); frame_->show(); toolbar_->show(); raise(); toolbar_->raise(); }
 void ScrollCaptureUi::hideEvent(QHideEvent *event) { frame_->hide(); toolbar_->hide(); QWidget::hideEvent(event); }
 
-} // namespace pixclone
+} // namespace still

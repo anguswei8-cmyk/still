@@ -20,7 +20,7 @@
 #include <QtConcurrentRun>
 #include <algorithm>
 
-namespace pixclone {
+namespace still {
 namespace {
 constexpr qint64 mib = 1024LL * 1024;
 constexpr qint64 maximumIndexBytes = 64 * mib;
@@ -53,8 +53,9 @@ QByteArray readBytes(const QString &path, qint64 maximum, QString &error) {
 QByteArray digest(const QByteArray &bytes) { return QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex(); }
 bool openRoot(const QString &root, std::unique_ptr<QLockFile> &lock, QString &error) {
     QDir directory(root);
-    const QString marker = directory.filePath(".pixclone-clipboard");
-    if (!QFile::exists(marker) && !directory.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System).isEmpty()) {
+    const QString marker = directory.filePath(".still-clipboard");
+    if (!QFile::exists(marker) && !QFile::exists(directory.filePath(".pixclone-clipboard"))
+        && !directory.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System).isEmpty()) {
         error = t("剪贴板目录需为空或为已有的 拾影剪贴板专用目录"); return false;
     }
     if (!directory.mkpath(".")) { error = t("无法创建剪贴板目录"); return false; }
@@ -211,7 +212,6 @@ void ClipboardArchive::add(ClipPayload payload) {
         const auto release = qScopeGuard([&] { --queuedItems_; queuedBytes_ -= bytes; });
         Result result;
         if (!state.blocked.isEmpty()) { result.error = state.blocked; return result; }
-        if (!state.options.value("enabled").toBool(true)) return result;
         ClipEntry entry;
         const auto encoded = encodeClipboard(std::move(payload), &entry, &result.error);
         if (!result.error.isEmpty() || encoded.isEmpty()) return result;
@@ -383,4 +383,4 @@ bool ClipboardArchive::reconfigureBlocking(QJsonObject options, std::function<bo
     return request->success;
 }
 
-} // namespace pixclone
+} // namespace still

@@ -4,7 +4,7 @@
 #include <QPointer>
 #include <QWidget>
 
-namespace pixclone {
+namespace still {
 
 class OcrJob;
 
@@ -17,7 +17,7 @@ public:
     void configure(bool wheelZoom, bool hideOnBlur, bool confirmDoubleClickClose = true);
     QImage image() const { return image_; }
 signals:
-    void editRequested(pixclone::Pin *pin);
+    void editRequested(still::Pin *pin);
     void toggleAllRequested();
     void closeAllRequested();
     void doubleClickClosePromptDisabled();
@@ -55,4 +55,4 @@ private:
     void zoom(qreal factor, const QPoint &anchor);
 };
 
-} // namespace pixclone
+} // namespace still

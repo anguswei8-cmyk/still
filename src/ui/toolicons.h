@@ -4,7 +4,7 @@
 #include <QIcon>
 #include <QString>
 
-namespace pixclone {
+namespace still {
 
 enum class ToolIcon {
     Edit, Copy, Save, Pin, Ocr, Scroll, Close, Apply,
@@ -17,4 +17,4 @@ enum class ToolIcon {
 QIcon toolIcon(ToolIcon icon, QColor color = QColor("#e7edf6"));
 QString toolbarStyleSheet();
 
-} // namespace pixclone
+} // namespace still

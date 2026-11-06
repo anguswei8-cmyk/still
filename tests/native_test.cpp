@@ -27,7 +27,7 @@
 #include <qt_windows.h>
 #endif
 
-using namespace pixclone;
+using namespace still;
 
 class NativeTest : public QObject {
     Q_OBJECT

@@ -5,7 +5,7 @@
 #include <QPointer>
 #include <QWidget>
 
-namespace pixclone {
+namespace still {
 
 class OcrJob;
 
@@ -57,4 +57,4 @@ private:
 
 bool saveWithDialog(QWidget *parent, const QImage &image, const QString &directory);
 
-} // namespace pixclone
+} // namespace still

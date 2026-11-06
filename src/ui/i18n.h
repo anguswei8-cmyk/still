@@ -5,7 +5,7 @@
 #include <QObject>
 #include <QTranslator>
 
-namespace pixclone {
+namespace still {
 inline QString t(const char *source) { return QCoreApplication::translate("Still", source); }
 inline QString t(const QString &source) { return t(source.toUtf8().constData()); }
 
@@ -33,4 +33,4 @@ private:
     QString language_ = "zh_CN", theme_ = "system";
     bool initialized_ = false;
 };
-} // namespace pixclone
+} // namespace still

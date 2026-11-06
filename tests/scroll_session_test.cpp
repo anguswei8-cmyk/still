@@ -7,7 +7,7 @@
 #include <QThreadPool>
 #include <QtConcurrentRun>
 
-using namespace pixclone;
+using namespace still;
 
 static QImage page() {
     QImage image(60, 600, QImage::Format_ARGB32);
