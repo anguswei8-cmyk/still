@@ -141,6 +141,48 @@ private slots:
         QVERIFY(opened); QVERIFY(window.isNull()); QCOMPARE(closing.size(), 1);
         QVERIFY(QDir(directory.path()).entryList(QDir::Files).isEmpty());
     }
+    void failedSaveWarningHandlesPinClosure_data() {
+        QTest::addColumn<bool>("closePin");
+        QTest::newRow("dismiss-warning") << false;
+        QTest::newRow("close-pin") << true;
+    }
+    void failedSaveWarningHandlesPinClosure() {
+        QFETCH(bool, closePin);
+        QTemporaryDir directory;
+        const QString target = directory.filePath("target");
+        QVERIFY(QDir().mkpath(target));
+        const bool nativeDialogs = QApplication::testAttribute(Qt::AA_DontUseNativeDialogs);
+        QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
+        const auto restore = qScopeGuard([=] { QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, nativeDialogs); });
+        QPointer<Pin> window = new Pin(whiteImage(), QRect(10, 10, 300, 150), {{"dir", target}}, "en-US");
+        window->show();
+        QSignalSpy saved(window, &Pin::imageSaved), closing(window, &PinWindow::closing);
+        QPointer<QMessageBox> warning;
+        bool selected = false, warned = false;
+        QTimer interact;
+        connect(&interact, &QTimer::timeout, this, [&] {
+            if (auto *message = window->findChild<QMessageBox *>(); message && message->isVisible()) {
+                warning = message; warned = true; interact.stop();
+                if (closePin) { window->close(); QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete); }
+                else message->accept();
+            } else if (auto *dialog = window->findChild<QFileDialog *>(); !selected && dialog && dialog->isVisible()) {
+                selected = true;
+                connect(dialog, &QFileDialog::accepted, this, [&] {
+                    // Make the selected directory unavailable after the file dialog validates it.
+                    QVERIFY(QDir(target).removeRecursively());
+                    QFile blocked(target); QVERIFY(blocked.open(QIODevice::WriteOnly));
+                });
+                dialog->selectFile("capture.png");
+                QVERIFY(QMetaObject::invokeMethod(dialog, "accept", Qt::DirectConnection));
+            }
+        });
+        interact.start(10);
+        QTest::keyClick(window, Qt::Key_S, Qt::ControlModifier);
+        QVERIFY(warned); QVERIFY(warning.isNull()); QVERIFY(saved.isEmpty());
+        QCOMPARE(window.isNull(), closePin); QCOMPARE(closing.size(), closePin ? 1 : 0);
+        QVERIFY(!QFile::exists(QDir(target).filePath("capture.png")));
+        if (!closePin) { QVERIFY(window->isVisible()); QCOMPARE(window->image(), whiteImage()); }
+    }
     void textPinSelectsOriginalTextWithoutOcr() {
         const auto started = ocrStarted.load();
         const QString text = QStringLiteral("  <b>字面 HTML</b>\r\n\t😀  A\rB\n尾部  ");

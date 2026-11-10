@@ -59,7 +59,12 @@ bool saveWithDialog(QWidget *parent, const QImage &image, const QJsonObject &opt
     if (dialog->exec() != QDialog::Accepted || !dialog || dialog->selectedFiles().isEmpty()) return false;
     const QString path = dialog->selectedFiles().first();
     QString error;
-    if (!saveImage(image, path, &error, -1, options.value("jpegQuality").toInt(95), options.value("pngCompression").toInt(50))) { QMessageBox::warning(parent, t("保存失败"), error); return false; }
+    if (!saveImage(image, path, &error, -1, options.value("jpegQuality").toInt(95), options.value("pngCompression").toInt(50))) {
+        QPointer<QMessageBox> warning = new QMessageBox(QMessageBox::Warning, t("保存失败"), error, QMessageBox::Ok, parent);
+        const auto cleanupWarning = qScopeGuard([&] { delete warning.data(); });
+        warning->exec();
+        return false;
+    }
     return true;
 }
 
