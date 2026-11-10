@@ -26,7 +26,7 @@ RowLayout {
                 spacing: 8
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 52
+                    Layout.preferredHeight: 60
                     radius: 6
                     color: option.modelData.value === "dark" ? "#1c1c1c" : "#ffffff"
                     border.color: Theme.border

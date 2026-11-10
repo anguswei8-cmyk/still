@@ -563,6 +563,21 @@ private slots:
         if (QGuiApplication::platformName() != "cocoa") QSKIP("Requires native macOS window controls");
         auto *nativeWindow = reinterpret_cast<NSView *>(window_->winId()).window;
         QVERIFY(nativeWindow);
+        QCOMPARE(qRound(NSHeight(nativeWindow.contentView.frame)), qRound(NSHeight(nativeWindow.frame)));
+        QCOMPARE(window_->view()->geometry().top(), 0);
+        QCOMPARE(window_->view()->height(), window_->height());
+        QVERIFY(nativeWindow.titlebarAppearsTransparent);
+        QCOMPARE(nativeWindow.titleVisibility, NSWindowTitleHidden);
+        auto *brand = item("WindowBrand"); QVERIFY(brand && brand->isVisible());
+        QVERIFY(brand->mapToScene(QPointF()).y() >= 32);
+        QVERIFY(item("MainNavigation")->mapToScene(QPointF()).y() > brand->mapToScene(QPointF(0, brand->height())).y());
+        QVERIFY(item("WindowDragArea")->isEnabled());
+        for (const auto type : {NSWindowCloseButton, NSWindowMiniaturizeButton, NSWindowZoomButton}) {
+            auto *button = [nativeWindow standardWindowButton:type];
+            QVERIFY(button.enabled && !button.hidden);
+            const NSRect bounds = [button convertRect:button.bounds toView:nativeWindow.contentView];
+            QVERIFY(NSContainsRect(nativeWindow.contentView.bounds, bounds));
+        }
         QVERIFY2([nativeWindow standardWindowButton:NSWindowMiniaturizeButton].enabled, "The main window minimize button must be enabled");
         QVERIFY(![nativeWindow isKindOfClass:NSPanel.class]);
         QVERIFY(nativeWindow.collectionBehavior & NSWindowCollectionBehaviorFullScreenPrimary);
@@ -572,6 +587,17 @@ private slots:
         }
         QVERIFY(!(nativeWindow.collectionBehavior & (NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorMoveToActiveSpace | NSWindowCollectionBehaviorFullScreenAuxiliary)));
         QCOMPARE(nativeWindow.level, NSInteger(NSNormalWindowLevel));
+        const auto appearance = window_->form().value("appearance").toMap();
+        for (const auto &theme : {QString("light"), QString("dark")}) {
+            window_->setSetting("appearance", "theme", theme); QTRY_VERIFY(!apply_->busy());
+            polishSettingsSurface();
+            auto *frame = nativeWindow.contentView.superview;
+            auto *bitmap = [frame bitmapImageRepForCachingDisplayInRect:frame.bounds]; QVERIFY(bitmap);
+            [frame cacheDisplayInRect:frame.bounds toBitmapImageRep:bitmap];
+            NSData *png = [bitmap representationUsingType:NSBitmapImageFileTypePNG properties:@{}];
+            QVERIFY([png writeToFile:reviewPath("mac-integrated-titlebar-" + theme).toNSString() atomically:YES]);
+        }
+        window_->setSetting("appearance", "theme", appearance.value("theme")); QTRY_VERIFY(!apply_->busy());
         window_->showMinimized();
         QTRY_VERIFY(nativeWindow.miniaturized);
         controller_->openClipboard();
@@ -718,6 +744,12 @@ private slots:
         const QString hoveredId = clips[hoveredIndex].toMap().value("id").toString();
         const auto cleanup = qScopeGuard([&] { archive->remove(hoveredId); });
         const QString suffix = QString::number(hoveredIndex);
+        auto *title = item("ClipTitle" + suffix); QVERIFY(title);
+        auto *snippet = item("ClipSnippet" + suffix); QVERIFY(snippet);
+        auto *time = item("ClipTime" + suffix); QVERIFY(time);
+        QVERIFY(qAbs(title->mapToScene(QPointF()).y() - time->mapToScene(QPointF()).y()) < 4);
+        const qreal snippetWidth = snippet->width();
+        QVERIFY(snippetWidth > item("ClipRow" + suffix)->width() - 100);
         movePointerTo(item("ClipboardSearch"));
         window_->setSelectedIndex(hoveredIndex);
         for (const auto &name : {"Copy", "Pin", "Delete"}) {
@@ -729,6 +761,7 @@ private slots:
         auto center = [](QQuickItem *control) { return QPointF(control->width() / 2, control->height() / 2); };
         auto *row = item("ClipRow" + suffix); QVERIFY(row);
         movePointerTo(row);
+        QCOMPARE(snippet->width(), snippetWidth);
         for (const auto &name : {"Copy", "Pin", "Delete"}) {
             auto *button = item(name + suffix); QVERIFY(button); QTRY_VERIFY(button->isVisible());
             movePointerTo(button);
@@ -2331,7 +2364,7 @@ private slots:
                 QVERIFY(action->mapToScene(QPointF()).y() + action->height() <= item("ClipboardList")->mapToScene(QPointF()).y());
                 QVERIFY(item("ClipboardList")->mapToScene(QPointF()).y() < 170);
                 initialBodyFont_ = item("ClipTitle0")->property("font").value<QFont>();
-                QVERIFY(item("ClipRow0")->height() <= 80);
+                QCOMPARE(item("ClipRow0")->height(), 86);
                 QVERIFY(item("ClipRow0")->width() > item("ClipboardList")->width() - 20);
                 QVERIFY(item("ClipRow5"));
                 auto *list = item("ClipboardList"); QVERIFY(list);
@@ -2368,6 +2401,7 @@ private slots:
         window_->setPage(1); QTest::qWait(30); QVERIFY(window_->view()->grabFramebuffer().save(reviewPath("compact-settings")));
         for (const auto &name : {QString("appearance_language"), QString("appearance_theme"), QString("capture_showMagnifier"), QString("capture_afterSelectAction")}) {
             auto *control = item(name); QVERIFY(control);
+            scrollSettingIntoView(control);
             const QRectF bounds(control->mapToScene(QPointF()), control->size()); QVERIFY(window_->view()->rect().contains(bounds.toAlignedRect()));
         }
         window_->resize(1000, 700);

@@ -7,7 +7,7 @@ QtObject {
     readonly property color sidebar: dark ? "#191919" : "#e9ebef"
     readonly property color navInk: ink
     readonly property color navMuted: dark ? "#adadad" : "#626875"
-    readonly property color navSelected: dark ? "#292929" : "#ffffff"
+    readonly property color navSelected: dark ? "#383838" : "#ffffff"
     readonly property color canvas: dark ? "#181818" : "#f4f5f7"
     readonly property color ink: dark ? "#ededed" : "#242731"
     readonly property color muted: dark ? "#adadad" : "#626875"
@@ -25,5 +25,10 @@ QtObject {
     readonly property color glassRim: dark ? "#18ffffff" : "#66ffffff"
     readonly property color navigationGlass: dark ? "#cc191919" : "#c4f8fafc"
     readonly property color error: dark ? "#ff9b90" : "#b42318"
+    readonly property int buttonRadius: 9
+    readonly property int searchRadius: 12
+    readonly property int sectionTopSpacing: 24
+    readonly property int sectionBottomSpacing: 16
+    readonly property int historyGap: 20
     readonly property string fontFamily: Qt.platform.os === "windows" ? "Microsoft YaHei UI" : "Helvetica Neue"
 }

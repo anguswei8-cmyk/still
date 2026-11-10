@@ -26,6 +26,8 @@
   "%1 条内容": "%1 items",
   "存储设置": "Storage settings",
   "继续编辑": "Continue editing",
+  "还没有截图历史": "No captures yet",
+  "复制、保存或贴图后的截图，会保留在这里。": "Captures you copy, save or pin will appear here.",
   "还没有截图历史\n复制、保存或贴图后的截图，会保留在这里。": "No captures yet\nCaptures you copy, save or pin will appear here.",
   "截取第一张图片": "Take your first capture",
   "截图历史，双击继续编辑": "Capture history; double-click to edit",

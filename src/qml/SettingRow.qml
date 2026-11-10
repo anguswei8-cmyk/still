@@ -13,10 +13,10 @@ ColumnLayout {
     Rectangle {
         visible: root.section && !root.first
         Layout.fillWidth: true
-        Layout.topMargin: 18
-        Layout.bottomMargin: 18
+        Layout.topMargin: Theme.sectionTopSpacing
+        Layout.bottomMargin: Theme.sectionBottomSpacing
         height: 1
-        color: Theme.border
+        color: Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.5)
     }
     Label {
         visible: root.section
@@ -29,7 +29,7 @@ ColumnLayout {
     RowLayout {
         visible: !root.section
         Layout.fillWidth: true
-        Layout.minimumHeight: root.field.group === "appearance" && root.field.key === "theme" ? 116 : root.field.description ? 68 : 50
+        Layout.minimumHeight: root.field.group === "appearance" && root.field.key === "theme" ? 116 : root.field.description ? 76 : 56
         spacing: 22
         HoverHandler { id: rowHover }
         ColumnLayout {

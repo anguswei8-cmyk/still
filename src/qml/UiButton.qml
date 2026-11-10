@@ -55,13 +55,12 @@ Button {
             }
         }
     }
-    background: GlassSurface {
-        radius: Theme.dark ? 8 : height / 2
-        emphasized: control.primary
+    background: Rectangle {
+        radius: Theme.buttonRadius
         visible: !control.quiet || control.hovered || control.down || control.checked || control.visualFocus
-        tint: control.inverse ? (control.hovered || control.down ? Theme.primaryHover : "transparent") : control.primary ? (control.down ? Theme.primaryPressed : control.hovered ? Theme.primaryHover : Theme.primary)
-                               : control.checked ? Theme.selection : control.down ? Theme.selection : control.hovered ? Theme.hover : control.quiet ? "transparent" : Theme.glass
+        color: control.inverse ? (control.hovered || control.down ? Theme.primaryHover : "transparent") : control.primary ? (control.down ? Theme.primaryPressed : control.hovered ? Theme.primaryHover : Theme.primary)
+                               : control.down || control.checked ? Theme.selection : control.hovered ? Theme.hover : control.quiet ? "transparent" : Theme.surface
         border.width: 1
-        border.color: control.visualFocus ? Theme.focus : Theme.dark ? "transparent" : control.primary ? "#40ffffff" : Theme.glassRim
+        border.color: control.visualFocus ? Theme.focus : control.primary || control.quiet ? "transparent" : Theme.border
     }
 }

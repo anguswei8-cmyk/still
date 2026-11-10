@@ -14,7 +14,7 @@ ColumnLayout {
     }
     RowLayout {
         Layout.fillWidth: true
-        Layout.minimumHeight: 68
+        Layout.minimumHeight: 76
         spacing: 22
         ColumnLayout {
             Layout.fillWidth: true
@@ -76,9 +76,9 @@ ColumnLayout {
     }
     Rectangle {
         Layout.fillWidth: true
-        Layout.topMargin: 18
-        Layout.bottomMargin: 18
+        Layout.topMargin: Theme.sectionTopSpacing
+        Layout.bottomMargin: Theme.sectionBottomSpacing
         height: 1
-        color: Theme.border
+        color: Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.5)
     }
 }

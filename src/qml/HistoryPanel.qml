@@ -18,7 +18,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.fillHeight: true
         cellWidth: width / Math.max(1, Math.floor(width / 224))
-        cellHeight: 198
+        cellHeight: 204
         model: backend.historyItems
         clip: true
         activeFocusOnTab: true
@@ -29,10 +29,10 @@ ColumnLayout {
             id: card
             required property int index
             required property var modelData
-            width: list.cellWidth - 14
-            height: list.cellHeight - 14
+            width: list.cellWidth - Theme.historyGap
+            height: list.cellHeight - Theme.historyGap
             radius: 12
-            color: Theme.surface
+            color: cardHover.hovered ? Theme.hover : Theme.surface
             border.width: list.currentIndex === index ? 2 : 1
             border.color: list.currentIndex === index ? Theme.focus : Theme.border
             ColumnLayout {
@@ -45,6 +45,7 @@ ColumnLayout {
             }
             Accessible.role: Accessible.ListItem
             Accessible.name: modelData.title
+            HoverHandler { id: cardHover }
             MouseArea { anchors.fill: parent; onClicked: { list.currentIndex = card.index; list.forceActiveFocus(); } onDoubleClicked: backend.historyAction(card.modelData.path, "edit") }
         }
         ColumnLayout {
@@ -52,8 +53,9 @@ ColumnLayout {
             anchors.centerIn: parent
             width: Math.min(parent.width - 40, 340)
             spacing: 16
-            Image { source: "image://content/icon/history" + (Theme.dark ? "-dark" : ""); sourceSize: Qt.size(88, 88); Layout.preferredWidth: 44; Layout.preferredHeight: 44; Layout.alignment: Qt.AlignHCenter }
-            Label { text: qsTranslate("Still", "还没有截图历史\n复制、保存或贴图后的截图，会保留在这里。"); color: Theme.muted; font.pixelSize: 14; wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true }
+            Image { source: "image://content/icon/history" + (Theme.dark ? "-dark" : ""); sourceSize: Qt.size(112, 112); Layout.preferredWidth: 56; Layout.preferredHeight: 56; Layout.alignment: Qt.AlignHCenter }
+            Label { text: qsTranslate("Still", "还没有截图历史"); color: Theme.ink; font.pixelSize: 18; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true }
+            Label { text: qsTranslate("Still", "复制、保存或贴图后的截图，会保留在这里。"); color: Theme.muted; font.pixelSize: 14; lineHeight: 1.5; wrapMode: Text.Wrap; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true }
             UiButton { text: qsTranslate("Still", "截取第一张图片"); primary: true; Layout.alignment: Qt.AlignHCenter; onClicked: backend.captureRequested() }
         }
     }

@@ -29,7 +29,7 @@ colors:
   dark-sidebar: "#191919"
   dark-nav-ink: "#ededed"
   dark-nav-muted: "#adadad"
-  dark-nav-selected: "#292929"
+  dark-nav-selected: "#383838"
   dark-canvas: "#181818"
   dark-ink: "#ededed"
   dark-muted: "#adadad"
@@ -57,7 +57,7 @@ typography:
     fontWeight: 400
   item-title:
     fontSize: "15px"
-    fontWeight: 500
+    fontWeight: 600
   preview:
     fontSize: "15px"
     fontWeight: 400
@@ -78,8 +78,8 @@ typography:
     fontWeight: 400
 rounded:
   field: "9px"
-  button: "18px"
-  search: "20px"
+  button: "9px"
+  search: "12px"
   navigation: "6px"
   clipboard-item: "4px"
   menu-item: "6px"
@@ -93,14 +93,16 @@ spacing:
   action-gap: "6px"
   content-gap: "12px"
   preview-gap: "16px"
-  section-gap: "18px"
+  section-top: "24px"
+  section-bottom: "16px"
+  history-gap: "20px"
   row-gap: "22px"
   workspace-inset: "24px"
   workspace-top: "12px"
   preview-inset: "12px"
 components:
   button:
-    backgroundColor: "{colors.glass}"
+    backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     typography: "{typography.control}"
     rounded: "{rounded.button}"
@@ -124,7 +126,7 @@ components:
     rounded: "{rounded.field}"
     height: "36px"
   search:
-    backgroundColor: "{colors.glass}"
+    backgroundColor: "{colors.surface}"
     rounded: "{rounded.search}"
     height: "40px"
   navigation-item:
@@ -143,7 +145,7 @@ components:
     backgroundColor: "{colors.accent}"
   clipboard-item:
     rounded: "{rounded.clipboard-item}"
-    height: "78px"
+    height: "86px"
   clipboard-selected:
     backgroundColor: "{colors.selection}"
     textColor: "{colors.ink}"
@@ -180,7 +182,7 @@ components:
 
 ## Colors
 
-frontmatter 记录复用的日间与夜间角色，`dark-` 前缀对应夜间。深色用浅灰文字、低对比选中底与清楚的键盘焦点区分层级。QML 八位色采用 `#AARRGGBB`，frontmatter 将其等价写为可移植 CSS `rgba()`。
+frontmatter 记录复用的日间与夜间角色，`dark-` 前缀对应夜间。深色用浅灰文字、石墨选中底、银色选中点与清楚的键盘焦点区分层级。QML 八位色采用 `#AARRGGBB`，frontmatter 将其等价写为可移植 CSS `rgba()`。
 
 ### Primary
 
@@ -207,13 +209,13 @@ Windows 主窗口与关闭贴图提示使用 `Microsoft YaHei UI`；其他平台
 
 尺寸均为 Qt 逻辑像素。主窗口默认（1080×740），最小（800×620）；侧栏固定（176px），上方窗口栏（48px）。所有六页统一横向（24px）、顶部（12px）、页头（40px）与正文间距（12px），不为设置页重复增加大段顶部留白。侧栏内容距窗口栏（18px），左右（12px），底部（20px）；导航高（42px）、间距（6px）。
 
-内容导航为剪贴板、已固定、截图历史；底部偏好入口切换为四类偏好，“返回内容”置于分类上方。内容页右下角使用（44×44px）圆形截图浮钮，列表末尾留出避让空间。偏好页隐藏截图按钮。暂停记录靠侧栏底部。Windows 集成真实最小化、最大化／还原、关闭、标题拖动和边缘缩放，其他平台保留原生装饰。
+内容导航为剪贴板、已固定、截图历史；底部偏好入口切换为四类偏好，“返回内容”置于分类上方。内容页右下角使用（44×44px）圆形截图浮钮，列表末尾留出避让空间。偏好页隐藏截图按钮。暂停记录靠侧栏底部。Windows 集成真实最小化、最大化／还原、关闭、标题拖动和边缘缩放，macOS 使用透明原生标题栏与全尺寸内容区，红黄绿按钮位于应用内左上角，不额外占高；仅侧栏顶部为按钮预留（32px），下方完整保留品牌 Logo 和名称，侧栏顶部可拖动，原生最小化、缩放和全屏能力保持。其他平台保留原生装饰。
 
-剪贴板页名与计数同行，搜索高（40px）、宽不超过（360px）。顶部保留直接筛选和更多，只有可粘贴到原窗口时显示粘贴。预览位于更多菜单。内容宽小于（660px）时筛选左右内边距收至（8px，否则12px），预览不可用并隐藏 Enter 提示。
+剪贴板页名与计数同行，搜索高（40px）、宽不超过（360px）。顶部保留直接筛选和更多，只有可粘贴到原窗口时显示粘贴。预览位于更多菜单。筛选左右内边距统一为（12px）；内容宽小于（660px）时预览不可用并隐藏 Enter 提示。
 
-单列行高（78px）、行距（4px）、上下 margin（2px）、宽为列表宽减（4px）；图片槽（64px）内图像最多（60×52px），类型槽（28px）内图标（20px）。按需预览宽为内容宽的（40%）且最多（320px），以（1px）竖线分隔，横向间距（16px）；预览透明，内部左（12px）、右（4px）、上下（6px）。
+单列行高（86px）、行距（4px）、上下 margin（2px）、宽为列表宽减（4px）；图片槽（48px）内图像最多（44×48px），类型槽（28px）内图标（20px）。按需预览宽为内容宽的（40%）且最多（320px），以（1px）竖线分隔，横向间距（16px）；预览透明，内部左（12px）、右（4px）、上下（6px）。
 
-历史画廊按（224px）分列、单元高（198px）、卡片扣除（14px）间距、内边距（12px）；存储弹层上限（580×560px）。设置仅纵向滚动，普通行最小高（50px）、有说明（68px）、外观行（116px）；分节为（18px 留白＋1px 线＋18px 留白），自动保存状态与标题同行、最大宽（260px）。
+历史画廊按（224px）分列、单元高（204px）、卡片扣除（20px）间距、内边距（12px）；存储弹层上限（580×560px）。设置仅纵向滚动，普通行最小高（56px）、有说明（76px）、外观行（116px）；外观缩略图高（60px），分节为（24px 留白＋半透明 1px 线＋16px 留白），自动保存状态与标题同行、最大宽（260px）。
 
 滚动截图继续使用（42px）工具条、（32px）按钮和（20px）图标；固定比例预览图宽最多（160px），另有（8px）滚动条，视口最高（360px）。新主窗口方向不改变这些已建立的交互尺寸。
 
@@ -221,27 +223,27 @@ Windows 主窗口与关闭贴图提示使用 `Microsoft YaHei UI`；其他平台
 
 ## Elevation & Depth
 
-深度来自真实系统 Acrylic、克制的半透明着色和单层细高光。`GlassSurface` 使用顶端轻亮、中段原色、底端稍暗的细微纵向渐变和（1px）rim，无额外阴影、重复内框或装饰动画；主要按钮只略微增强高光。侧栏和内容区本身不套 `GlassSurface` 大外框。高对比度或系统不支持时保留相同结构与清楚的实色背景。
+深度来自真实系统 Acrylic、克制的半透明着色和单层细高光。常规按钮与搜索使用实色背景和清楚的边界，不叠加渐变、额外阴影、重复内框或装饰动画。仅浮动截图按钮使用 `GlassSurface` 的轻微高光；侧栏和内容区本身不套玻璃大外框。高对比度或系统不支持时保留相同结构与清楚的实色背景。
 
 **The Continuous Surface Rule.** 以内容和留白组织主窗口；玻璃表达操作层，不把侧栏、列表和预览拆成一块块圆角容器。
 
 ## Shapes
 
-普通及主要按钮按自身高度的一半形成胶囊；frontmatter 的 button 对应默认高度。搜索圆润，导航仅小圆角软色面，剪贴板行仅轻微圆角，字段和菜单保持小圆角。列表、预览和设置不包外层卡片；历史对象仍保留缩略图卡片和（2px）选中边。窗口非最大化外缘保留（12px）系统轮廓，最大化归零，这不等于两个独立工作区外框。
+普通及主要按钮在深浅主题统一使用（9px）圆角，浮动截图入口保留圆形。搜索使用（12px）圆角，导航仅小圆角软色面，剪贴板行仅轻微圆角，字段和菜单保持小圆角。列表、预览和设置不包外层卡片；历史对象仍保留缩略图卡片和（2px）选中边。窗口非最大化外缘保留（12px）系统轮廓，最大化归零，这不等于两个独立工作区外框。
 
 ## Components
 
 ### Buttons and Fields
 
-`UiButton` 主动作使用石墨胶囊，普通按钮为轻玻璃，quiet 静态透明；焦点采用 `Theme.focus` 细边。图标槽（18×18px）、tooltip 延迟（600ms），保留当前语言动作名与可访问名称。字段、下拉与数字控件沿用共享实现，输入高（36px）；搜索使用独立玻璃背景。开关轨道（38×24px）、滑块（18×18px），键盘焦点同时显示轨道与外层轮廓。
+`UiButton` 主动作使用石墨实色，普通按钮为实色底加细边，quiet 静态透明；焦点采用 `Theme.focus` 细边。图标槽（18×18px）、tooltip 延迟（600ms），保留当前语言动作名与可访问名称。字段、下拉与数字控件沿用共享实现，输入高（36px）；搜索使用独立实色背景、常驻细边和聚焦边框。开关轨道（38×24px）、滑块（18×18px），键盘焦点同时显示轨道与外层轮廓。
 
 ### Navigation and Settings
 
-导航支持鼠标和上下方向键，切换后保留焦点。语言两项直接选择、外观三张微缩示意，保留 RadioButton 语义。选项立即提交；文字、路径与数字完成输入、切页、关闭或存储弹层关闭时提交；后台保留最新候选，失败恢复未被新输入替换的原值，无保存按钮。
+导航以选中底色、加粗文字和尾部小圆点共同标记当前页面；支持鼠标和上下方向键，切换后保留可见焦点。语言两项直接选择、外观三张微缩示意，保留 RadioButton 语义。选项立即提交；文字、路径与数字完成输入、切页、关闭或存储弹层关闭时提交；后台保留最新候选，失败恢复未被新输入替换的原值，无保存按钮。
 
 ### Clipboard List and Preview
 
-标题与两行摘要清楚分层，时间右对齐。选中或悬停时显示复制、固定和删除三个居中按钮。已固定条目的固定按钮始终可见。搜索框聚焦时隐藏条目选中底色、选中标记及仅因选中而显示的操作，保留当前条目；搜索框上下键进入列表导航并恢复高亮。列表上下与左右逐项选择。Ctrl+C、Delete、空格、右键和三种 Enter 动作保持。
+标题使用 15px 半粗体，与 11px 时间同行右对齐，12px 两行摘要独占下方宽度。选中或悬停时，复制、固定和删除三个居中按钮浮于条目右下角；摘要仅在操作显示时留出空间，按两行折行与省略，标题位置和内容列宽保持不变。已固定条目的固定按钮始终可见。搜索框聚焦时隐藏条目选中底色、选中标记及仅因选中而显示的操作，保留当前条目；搜索框上下键进入列表导航并恢复高亮。列表上下与左右逐项选择。Ctrl+C、Delete、空格、右键和三种 Enter 动作保持。
 
 预览默认关闭，打开后延迟读取选中内容，离页、隐藏或销毁取消过期读取。文字只读可选择，图片按设备像素比等比显示；缩略图不超过（128×96px）、PNG（17000 bytes）、base64 小于（24000 字符），索引边界（2000 条／64MiB）；原始内容不改写。`UiImages` 只持有程序图标、缩略图及一个选中原图。
 
@@ -253,7 +255,7 @@ Windows 主窗口与关闭贴图提示使用 `Microsoft YaHei UI`；其他平台
 
 ### History and Identity
 
-历史缩略图保持比例，继续编辑、贴图、删除、清空、目录与分批加载保持；存储状态在当前弹层可见。面向用户统一“拾影 / Still”，构建目标、命名空间、URI、组织名和实例标识统一使用 Still；兼容读取旧数据目录和归档标记。
+历史缩略图保持比例，悬停时改变卡片底色，空状态标题与操作说明分层；继续编辑、贴图、删除、清空、目录与分批加载保持；存储状态在当前弹层可见。面向用户统一“拾影 / Still”，构建目标、命名空间、URI、组织名和实例标识统一使用 Still；兼容读取旧数据目录和归档标记。
 
 标志源为 `assets/still.svg`，项目自绘 S 字母与四角取景框，石墨渐变底、银白主体；macOS 状态栏使用独立的透明底单色模板 `assets/still-tray.png`。`scripts/generate-logo.ps1` 生成 PNG、七尺寸 ICO 与 ICNS；出处在 `assets/still.png.json`。验证方法见 `README.md`。
 

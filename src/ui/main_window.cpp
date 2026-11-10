@@ -71,6 +71,10 @@ MainWindow::MainWindow(SettingsApply &settings, HistoryStore &history, Clipboard
     refreshStartup();
     setAttribute(Qt::WA_DeleteOnClose); setMinimumSize(800, 620); resize(1080, 740);
     setWindowFlags(Qt::Window | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
+#ifdef Q_OS_MACOS
+    // QML reserves the traffic-light area; do not inset the entire content surface.
+    setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea, false);
+#endif
 #ifdef Q_OS_WIN
     setWindowFlag(Qt::FramelessWindowHint);
     if (QGuiApplication::platformName() == "windows") setAttribute(Qt::WA_TranslucentBackground);
@@ -365,10 +369,13 @@ void MainWindow::updateBackdrop() {
 void MainWindow::showEvent(QShowEvent *event) {
 #ifdef Q_OS_MACOS
     [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
-    if (@available(macOS 13.0, *)) {
-        if (QGuiApplication::platformName() == "cocoa") {
+    if (QGuiApplication::platformName() == "cocoa") {
+        auto *nativeWindow = ((__bridge NSView *)reinterpret_cast<void *>(winId())).window;
+        nativeWindow.styleMask |= NSWindowStyleMaskFullSizeContentView;
+        nativeWindow.titlebarAppearsTransparent = YES;
+        nativeWindow.titleVisibility = NSWindowTitleHidden;
+        if (@available(macOS 13.0, *)) {
             // Keep the main window separate from other applications' full-screen spaces.
-            auto *nativeWindow = ((__bridge NSView *)reinterpret_cast<void *>(winId())).window;
             nativeWindow.collectionBehavior |= NSWindowCollectionBehaviorPrimary;
         }
     }

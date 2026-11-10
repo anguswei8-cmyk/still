@@ -7,6 +7,7 @@ Pane {
     id: root
     objectName: "QmlShell"
     readonly property bool customTitleBar: Qt.platform.os === "windows"
+    readonly property bool integratedMacTitleBar: Qt.platform.os === "osx"
     readonly property real captureClearance: captureButton.height + 12
     component WindowButton: UiButton {
         implicitWidth: 34
@@ -34,7 +35,17 @@ Pane {
                 Layout.fillWidth: true
             }
         }
-        background: Rectangle { radius: 6; color: control.checked ? Theme.navSelected : control.hovered ? Theme.hover : "transparent"; border.color: control.visualFocus ? Theme.focus : "transparent" }
+        background: Rectangle {
+            radius: 6
+            color: control.checked ? Theme.navSelected : control.down ? Theme.selection : control.hovered ? Theme.hover : "transparent"
+            border.color: control.visualFocus || control.checked && nav.activeFocus ? Theme.focus : "transparent"
+            Rectangle {
+                visible: control.checked
+                anchors.right: parent.right; anchors.rightMargin: 6; anchors.verticalCenter: parent.verticalCenter
+                width: 4; height: 4; radius: 2
+                color: Theme.focus
+            }
+        }
     }
     padding: 0
     font.family: Theme.fontFamily
@@ -80,18 +91,21 @@ Pane {
     Item {
         id: chrome
         width: root.customTitleBar ? parent.width : 176
-        height: 48
+        height: root.integratedMacTitleBar ? 80 : 48
         MouseArea {
+            objectName: "WindowDragArea"
             anchors.fill: parent
-            enabled: root.customTitleBar
+            enabled: root.customTitleBar || root.integratedMacTitleBar
             acceptedButtons: Qt.LeftButton
             onPressed: backend.moveWindow()
             onDoubleClicked: backend.toggleMaximized()
         }
         RowLayout {
             anchors.fill: parent
+            anchors.topMargin: root.integratedMacTitleBar ? 32 : 0
             spacing: 0
             RowLayout {
+                objectName: "WindowBrand"
                 Layout.preferredWidth: 176
                 Layout.maximumWidth: 176
                 Layout.fillWidth: false
@@ -113,7 +127,7 @@ Pane {
                     glyph: "close"; inverse: hovered
                     ToolTip.text: qsTranslate("Still", "关闭窗口")
                     onClicked: backend.close()
-                    background: Rectangle { radius: Theme.dark ? 8 : height / 2; color: closeButton.hovered ? "#ce342b" : "transparent" }
+                    background: Rectangle { radius: Theme.buttonRadius; color: closeButton.hovered ? "#ce342b" : "transparent" }
                 }
             }
         }
@@ -227,9 +241,11 @@ Pane {
                     Accessible.name: qsTranslate("Still", "搜索剪贴板历史")
                     onTextEdited: backend.search = text
                     Keys.onPressed: event => clipboardPage.handleKey(event, true)
-                    background: GlassSurface {
-                        radius: Theme.dark ? 8 : 20
-                        border.color: Theme.dark ? (search.activeFocus ? "#737373" : "transparent") : (search.activeFocus ? Theme.focus : Theme.border)
+                    background: Rectangle {
+                        radius: Theme.searchRadius
+                        color: Theme.dark ? Theme.canvas : Theme.surface
+                        border.width: 1
+                        border.color: search.activeFocus ? Theme.focus : Theme.border
                     }
                     Image { x: 13; anchors.verticalCenter: parent.verticalCenter; width: 16; height: 16; source: "image://content/icon/search" + (Theme.dark ? "-dark" : ""); sourceSize: Qt.size(32, 32) }
                     UiButton {
@@ -284,9 +300,9 @@ Pane {
         z: 1
         glyph: "capture"
         primary: true
-        background: Rectangle {
+        background: GlassSurface {
             radius: height / 2
-            color: captureButton.down ? Theme.primaryPressed : captureButton.hovered ? Theme.primaryHover : Theme.dark ? Theme.border : Theme.primary
+            tint: captureButton.down ? Theme.primaryPressed : captureButton.hovered ? Theme.primaryHover : Theme.dark ? Theme.border : Theme.primary
             border.color: captureButton.visualFocus ? Theme.focus : Theme.glassRim
         }
         layer.enabled: GraphicsInfo.api !== GraphicsInfo.Software

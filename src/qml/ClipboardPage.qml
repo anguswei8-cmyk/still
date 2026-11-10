@@ -81,19 +81,19 @@ ColumnLayout {
                     objectName: "Filter_" + modelData.key
                     text: modelData.text
                     implicitHeight: 32
-                    leftPadding: !root.previewFits ? 8 : 12
+                    leftPadding: 12
                     rightPadding: leftPadding
                     quiet: true
                     checked: backend.filter === modelData.key
                     onClicked: backend.filter = modelData.key
                     background: Rectangle {
                         radius: 8
-                        color: parent.checked && !Theme.dark ? Theme.selection : parent.hovered ? Theme.hover : "transparent"
-                        border.color: parent.visualFocus ? Theme.focus : "transparent"
+                        color: parent.checked ? Theme.dark ? Theme.navSelected : Theme.selection : parent.down ? Theme.selection : parent.hovered ? Theme.hover : "transparent"
+                        border.color: parent.visualFocus ? Theme.focus : parent.checked ? Theme.border : "transparent"
                         Rectangle {
                             visible: Theme.dark && parent.parent.checked
-                            anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
-                            width: 14; height: 2; radius: 1; color: Theme.focus
+                            anchors.horizontalCenter: parent.horizontalCenter; anchors.top: parent.top
+                            width: 16; height: 3; radius: 1.5; color: Theme.focus
                         }
                     }
                 }
@@ -156,10 +156,11 @@ ColumnLayout {
                 required property int index
                 required property var modelData
                 readonly property bool selected: backend.selectedIndex === index && !root.searchField.activeFocus
+                readonly property bool actionsRevealed: selected || rowHover.hovered || copyAction.visualFocus || pinAction.visualFocus || deleteAction.visualFocus
                 objectName: "ClipRow" + index
                 x: 2
                 width: list.width - 4
-                height: 78
+                height: 86
                 radius: 4
                 color: selected ? Theme.selection : rowHover.hovered ? Theme.hover : "transparent"
                 border.color: selected && list.activeFocus ? Theme.focus : "transparent"
@@ -190,12 +191,12 @@ ColumnLayout {
                     anchors.leftMargin: 12; anchors.rightMargin: 12
                     spacing: 14
                     Item {
-                        Layout.preferredWidth: Theme.dark ? 52 : card.modelData.kind === "image" ? 64 : 28
+                        Layout.preferredWidth: card.modelData.kind === "image" ? 48 : 28
                         Layout.preferredHeight: 52
                         Image {
                             anchors.centerIn: parent
                             width: card.modelData.kind === "image" ? parent.width - 4 : 20
-                            height: card.modelData.kind === "image" ? 52 : 20
+                            height: card.modelData.kind === "image" ? 48 : 20
                             source: card.modelData.kind === "image" ? card.modelData.thumbnail || "" : "image://content/icon/" + card.modelData.kind + (Theme.dark ? "-dark" : "")
                             sourceSize: Qt.size(96, 96)
                             fillMode: Image.PreserveAspectFit
@@ -203,15 +204,28 @@ ColumnLayout {
                     }
                     ColumnLayout {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
+                        Layout.topMargin: 16
                         spacing: 4
-                        Text {
-                            objectName: "ClipTitle" + card.index
-                            text: root.contentTitle(card.modelData)
-                            textFormat: Text.PlainText
-                            font.family: Theme.fontFamily; font.pixelSize: 15; font.weight: Font.Medium
-                            color: Theme.ink
-                            elide: Text.ElideRight
+                        RowLayout {
                             Layout.fillWidth: true
+                            spacing: 12
+                            Text {
+                                objectName: "ClipTitle" + card.index
+                                text: root.contentTitle(card.modelData)
+                                textFormat: Text.PlainText
+                                font.family: Theme.fontFamily; font.pixelSize: 15; font.weight: Font.DemiBold
+                                color: Theme.ink
+                                elide: Text.ElideRight
+                                Layout.fillWidth: true
+                            }
+                            Text {
+                                objectName: "ClipTime" + card.index
+                                text: root.relativeTime(card.modelData.createdMs)
+                                font.family: Theme.fontFamily; font.pixelSize: 11
+                                color: card.selected ? Theme.selectedMuted : Theme.muted
+                                Accessible.description: card.modelData.createdText
+                            }
                         }
                         Text {
                             objectName: "ClipSnippet" + card.index
@@ -222,51 +236,51 @@ ColumnLayout {
                             elide: Text.ElideRight
                             wrapMode: Text.Wrap
                             maximumLineCount: 2
+                            rightPadding: card.actionsRevealed ? 104 : card.modelData.pinned ? 76 : 0
                             Layout.fillWidth: true
                             Accessible.description: card.modelData.kind === "files" ? card.modelData.preview : ""
                         }
                     }
-                    ColumnLayout {
-                        spacing: 3
-                        Text {
-                            objectName: "ClipTime" + card.index
-                            text: root.relativeTime(card.modelData.createdMs)
-                            font.family: Theme.fontFamily; font.pixelSize: 11
-                            color: card.selected ? Theme.selectedMuted : Theme.muted
-                            Accessible.description: card.modelData.createdText
-                            Layout.alignment: Qt.AlignRight
+                }
+                Rectangle {
+                    anchors.right: parent.right; anchors.rightMargin: 8
+                    anchors.bottom: parent.bottom; anchors.bottomMargin: 8
+                    width: 104; height: 32
+                    radius: 6
+                    color: card.selected ? Theme.selection : card.actionsRevealed ? Theme.hover : "transparent"
+                    visible: card.actionsRevealed || card.modelData.pinned
+                    Item {
+                        anchors.centerIn: parent
+                        width: 92; height: 28
+                        RowAction {
+                            id: copyAction
+                            objectName: "Copy" + card.index
+                            anchors.right: pinAction.left; anchors.rightMargin: 4
+                            glyph: "copy"
+                            visible: card.actionsRevealed
+                            ToolTip.text: qsTranslate("Still", "复制内容")
+                            onClicked: { backend.selectedIndex = card.index; backend.activate("copy"); }
                         }
-                        Item {
-                            Layout.preferredWidth: 92; Layout.preferredHeight: 28
-                            Layout.alignment: Qt.AlignRight
-                            RowAction {
-                                objectName: "Copy" + card.index
-                                anchors.right: pinAction.left; anchors.rightMargin: 4
-                                glyph: "copy"
-                                visible: card.selected || rowHover.hovered || visualFocus
-                                ToolTip.text: qsTranslate("Still", "复制内容")
-                                onClicked: { backend.selectedIndex = card.index; backend.activate("copy"); }
-                            }
-                            RowAction {
-                                id: pinAction
-                                objectName: "Pin" + card.index
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                glyph: "star"; checked: !!card.modelData.pinned
-                                visible: card.selected || card.modelData.pinned || rowHover.hovered || visualFocus
-                                ToolTip.text: checked ? qsTranslate("Still", "取消固定") : qsTranslate("Still", "固定内容")
-                                onClicked: { backend.selectedIndex = card.index; backend.togglePin(); }
-                            }
-                            RowAction {
-                                objectName: "Delete" + card.index
-                                anchors.right: parent.right
-                                glyph: "trash"
-                                visible: card.selected || rowHover.hovered || visualFocus
-                                ToolTip.text: qsTranslate("Still", "删除这条记录")
-                                onClicked: {
-                                    backend.selectedIndex = card.index;
-                                    list.forceActiveFocus();
-                                    backend.removeSelected();
-                                }
+                        RowAction {
+                            id: pinAction
+                            objectName: "Pin" + card.index
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            glyph: "star"; checked: !!card.modelData.pinned
+                            visible: card.actionsRevealed || card.modelData.pinned
+                            ToolTip.text: checked ? qsTranslate("Still", "取消固定") : qsTranslate("Still", "固定内容")
+                            onClicked: { backend.selectedIndex = card.index; backend.togglePin(); }
+                        }
+                        RowAction {
+                            id: deleteAction
+                            objectName: "Delete" + card.index
+                            anchors.right: parent.right
+                            glyph: "trash"
+                            visible: card.actionsRevealed
+                            ToolTip.text: qsTranslate("Still", "删除这条记录")
+                            onClicked: {
+                                backend.selectedIndex = card.index;
+                                list.forceActiveFocus();
+                                backend.removeSelected();
                             }
                         }
                     }
@@ -277,15 +291,15 @@ ColumnLayout {
                 width: Math.min(parent.width - 40, 320)
                 visible: backend.clips.length === 0
                 spacing: 14
-                Image { source: "image://content/icon/clipboard" + (Theme.dark ? "-dark" : ""); sourceSize: Qt.size(96, 96); Layout.preferredWidth: 44; Layout.preferredHeight: 44; Layout.alignment: Qt.AlignHCenter }
+                Image { source: "image://content/icon/clipboard" + (Theme.dark ? "-dark" : ""); sourceSize: Qt.size(112, 112); Layout.preferredWidth: 56; Layout.preferredHeight: 56; Layout.alignment: Qt.AlignHCenter }
                 Label {
                     objectName: "ClipboardEmpty"
                     text: backend.totalCount === 0 ? qsTranslate("Still", "还没有内容") : qsTranslate("Still", "没有匹配的内容")
-                    color: Theme.ink; font.pixelSize: 18; font.weight: Font.Medium; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true
+                    color: Theme.ink; font.pixelSize: 18; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; Layout.fillWidth: true
                 }
                 Label {
                     text: backend.totalCount > 0 ? qsTranslate("Still", "试试其他关键词，或切换内容类型。") : !backend.form.clipboard.enabled ? qsTranslate("Still", "剪贴板记录已关闭，可在偏好设置中开启。") : backend.paused ? qsTranslate("Still", "已暂停记录，继续后会收集新的复制内容。") : qsTranslate("Still", "复制文字、图片或文件后，内容会出现在这里。")
-                    color: Theme.muted; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap; Layout.fillWidth: true
+                    color: Theme.muted; font.pixelSize: 14; lineHeight: 1.5; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap; Layout.fillWidth: true
                 }
             }
         }
