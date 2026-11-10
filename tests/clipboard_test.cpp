@@ -21,6 +21,25 @@ static ClipPayload text(const QString &value) { QMimeData mime; mime.setText(val
 class ClipboardTest : public QObject {
     Q_OBJECT
 private slots:
+    void migrationRejectsDependentPaths() {
+        QTemporaryDir directory;
+        ClipboardArchive archive(options(directory.filePath("clips")));
+        archive.add(text("keep history")); QTRY_COMPARE(archive.entries().size(), 1);
+        const auto originalDirectory = archive.directory();
+        QStringList paths{"relative-folder"};
+#ifdef Q_OS_WIN
+        paths.append({"C:relative-folder", "/rooted-folder", "\\rooted-folder", "\\\\server"});
+#endif
+        for (const auto &path : paths) {
+            QString error; bool committed = false;
+            QVERIFY(!archive.reconfigureBlocking(options(path), [&](QString &) { committed = true; return true; }, error));
+            QVERIFY(!error.isEmpty()); QVERIFY(!committed);
+            QCOMPARE(archive.directory(), originalDirectory); QCOMPARE(archive.entries().size(), 1);
+        }
+        QSignalSpy ready(&archive, &ClipboardArchive::ready);
+        archive.load(archive.entries().first().id); QTRY_COMPARE(ready.count(), 1);
+        QCOMPARE(qvariant_cast<ClipPayload>(ready[0][1]).text, QString("keep history"));
+    }
     void internalClipboardMarkersAreNotArchived() {
         QMimeData mime;
         mime.setText("keep text");

@@ -1,4 +1,5 @@
 #include "settings_backup_dialog.h"
+#include "storage/store.h"
 #include "settings_apply.h"
 #include "settings_backup.h"
 #include "ui/i18n.h"
@@ -199,7 +200,7 @@ void SettingsBackupDialog::importBackup() {
     auto candidate = importCandidate();
     if (directories_->isChecked()) for (const auto &group : directoryGroups) {
         const QString path = candidate.value(group).toObject().value("dir").toString();
-        if (!path.isEmpty() && !QDir::isAbsolutePath(path)) {
+        if (!path.isEmpty() && !isAbsoluteDirectoryPath(path)) {
             state_ = State::Failed; detail_ = t("备份目录不适用于本机，请保留当前目录或重新选择路径。"); failedPath_ = path; updateText(); return;
         }
     }

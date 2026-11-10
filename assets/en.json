@@ -277,6 +277,7 @@
   "部分历史无法删除：": "Some history items could not be deleted: ",
   "缺少设置提交步骤": "The settings commit step is missing",
   "历史目录必须使用完整路径": "The history folder must use an absolute path",
+  "目录必须使用完整路径，或留空使用默认目录。": "Use an absolute folder path, or leave it empty to use the default folder.",
   "新目录已启用，部分旧副本未删除，可核对后手动清理": "The new folder is active. Some old copies remain; verify them before removing them manually.",
   "滚动帧捕获失败，已保留最后成功的结果": "Could not capture the next frame; the last successful result was kept",
   "长截图达到大小上限或无法继续拼接，已保留最后成功的结果": "The scrolling capture reached its size limit or could not continue. The last successful result was kept.",

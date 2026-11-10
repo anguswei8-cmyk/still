@@ -41,6 +41,22 @@ using namespace still;
 class NativeTest : public QObject {
     Q_OBJECT
 private slots:
+    void threadHotkeyMessageDispatchesWithoutAResult() {
+#ifdef Q_OS_WIN
+        Hotkeys keys;
+        QVERIFY(keys.bind(42, QKeySequence("Ctrl+Alt+Shift+F13")));
+        // Native IDs are private; locate this registration through the public dispatch API.
+        int nativeId = 0;
+        while (nativeId <= 0xbfff && !keys.dispatchNative(nativeId)) ++nativeId;
+        QVERIFY(nativeId <= 0xbfff);
+        QSignalSpy activated(&keys, &Hotkeys::activated);
+        QVERIFY(PostThreadMessageW(GetCurrentThreadId(), WM_HOTKEY, WPARAM(nativeId), 0));
+        QTRY_COMPARE(activated.size(), 1);
+        QCOMPARE(activated.first().first().toInt(), 42);
+#else
+        QSKIP("Windows thread hotkey message dispatch");
+#endif
+    }
     void scrollingCaptureWaitsThenJoinsWheelScrolledContent_data() {
         QTest::addColumn<QString>("language"); QTest::addColumn<QString>("theme");
         QTest::newRow("zh-light") << QString("zh_CN") << QString("light");

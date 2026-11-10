@@ -12,7 +12,9 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPointer>
 #include <QScreen>
+#include <QScopeGuard>
 #include <QSizeGrip>
 #include <QTextEdit>
 #include <QToolButton>
@@ -93,16 +95,19 @@ bool TextPin::eventFilter(QObject *object, QEvent *event) {
 }
 
 void TextPin::showMenu(const QPoint &point) {
-    QMenu menu(this); menu.setObjectName("TextPinMenu");
-    menu.addAction(t("复制"), this, &TextPin::copy);
-    menu.addAction(t("全选"), editor_, &QTextEdit::selectAll);
-    auto *more = menu.addMenu(t("更多操作"));
+    // The global close action can delete the pin during the menu's nested event loop.
+    QPointer<QMenu> menu = new QMenu(this);
+    const auto cleanup = qScopeGuard([&] { delete menu.data(); });
+    menu->setObjectName("TextPinMenu");
+    menu->addAction(t("复制"), this, &TextPin::copy);
+    menu->addAction(t("全选"), editor_, &QTextEdit::selectAll);
+    auto *more = menu->addMenu(t("更多操作"));
     auto *top = more->addAction(t("保持置顶")); top->setCheckable(true); top->setChecked(windowFlags() & Qt::WindowStaysOnTopHint);
     connect(top, &QAction::triggered, this, [this](bool checked) { setWindowFlag(Qt::WindowStaysOnTopHint, checked); show(); });
     auto *restore = more->addAction(t("恢复最近关闭贴图"), this, &PinWindow::restoreClosedRequested); restore->setEnabled(canRestoreClosed_);
     more->addAction(t("隐藏/显示全部贴图"), this, &PinWindow::toggleAllRequested);
     more->addAction(t("关闭全部贴图"), this, &PinWindow::closeAllRequested);
-    menu.addSeparator(); menu.addAction(t("关闭"), this, &QWidget::close); menu.exec(point);
+    menu->addSeparator(); menu->addAction(t("关闭"), this, &QWidget::close); menu->exec(point);
 }
 
 void TextPin::contextMenuEvent(QContextMenuEvent *event) { showMenu(event->globalPos()); }

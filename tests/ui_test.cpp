@@ -107,6 +107,40 @@ private slots:
         for (auto *widget : QApplication::topLevelWidgets()) widget->close();
         QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     }
+    void closingPinWithAnOpenPopupDoesNotCrash_data() {
+        QTest::addColumn<QString>("popup");
+        QTest::newRow("save") << QString("save");
+        QTest::newRow("image-menu") << QString("PinMenu");
+        QTest::newRow("text-menu") << QString("TextPinMenu");
+    }
+    void closingPinWithAnOpenPopupDoesNotCrash() {
+        QFETCH(QString, popup);
+        QTemporaryDir directory;
+        const bool nativeDialogs = QApplication::testAttribute(Qt::AA_DontUseNativeDialogs);
+        QApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
+        const auto restore = qScopeGuard([=] { QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, nativeDialogs); });
+        QPointer<PinWindow> window = popup == "TextPinMenu" ? static_cast<PinWindow *>(new TextPin("sample"))
+            : static_cast<PinWindow *>(new Pin(whiteImage(), QRect(10, 10, 300, 150), {{"dir", directory.path()}}, "en-US"));
+        window->show();
+        QSignalSpy closing(window, &PinWindow::closing);
+        bool opened = false;
+        QTimer closer;
+        connect(&closer, &QTimer::timeout, this, [&] {
+            if (!window) return;
+            QWidget *child = popup == "save" ? static_cast<QWidget *>(window->findChild<QFileDialog *>()) : window->findChild<QMenu *>(popup);
+            if (!child || !child->isVisible()) return;
+            opened = true; closer.stop(); window->close();
+            QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        });
+        closer.start(10);
+        if (popup == "save") QTest::keyClick(window, Qt::Key_S, Qt::ControlModifier);
+        else {
+            QContextMenuEvent event(QContextMenuEvent::Mouse, QPoint(20, 20), window->mapToGlobal(QPoint(20, 20)));
+            QApplication::sendEvent(window, &event);
+        }
+        QVERIFY(opened); QVERIFY(window.isNull()); QCOMPARE(closing.size(), 1);
+        QVERIFY(QDir(directory.path()).entryList(QDir::Files).isEmpty());
+    }
     void textPinSelectsOriginalTextWithoutOcr() {
         const auto started = ocrStarted.load();
         const QString text = QStringLiteral("  <b>字面 HTML</b>\r\n\t😀  A\rB\n尾部  ");

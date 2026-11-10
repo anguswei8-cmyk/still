@@ -16,7 +16,8 @@ namespace still {
 namespace {
 
 bool absoluteBackupPath(const QString &path) {
-    if (path.isEmpty() || QDir::isAbsolutePath(path)) return true;
+    // Qt treats drive-relative Windows paths such as C:folder as absolute.
+    if (path.isEmpty() || path.startsWith('/')) return true;
     if (path.size() >= 3 && ((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z'))
         && path[1] == ':' && (path[2] == '/' || path[2] == '\\')) return true;
     return path.startsWith("\\\\") && path.mid(2).split('\\', Qt::SkipEmptyParts).size() >= 2;

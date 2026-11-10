@@ -184,7 +184,7 @@ private slots:
 #else
         save["dir"] = "C:\\Users\\Other\\Pictures";
 #endif
-        if (QDir::isAbsolutePath(save.value("dir").toString())) QSKIP("This platform also accepts the alternate platform's absolute path syntax");
+        QVERIFY(!isAbsoluteDirectoryPath(save.value("dir").toString()));
         imported["save"] = save; const QString backup = directory.filePath("backup.json"); QVERIFY(saveSettingsBackup(backup, imported, nullptr));
         QVERIFY(chooseFile(dialog, "ChooseSettingsBackup", backup)); directories(dialog)->setChecked(true);
         button(dialog, "ImportSettingsBackup")->click(); QVERIFY(!settings.busy()); QCOMPARE(settings.settings(), initial);

@@ -15,6 +15,28 @@ using namespace still;
 class SettingsDraftTest : public QObject {
     Q_OBJECT
 private slots:
+    void directoryInputRejectsDependentPaths_data() {
+        QTest::addColumn<QString>("group"); QTest::addColumn<QString>("path");
+        QStringList paths{"relative-folder"};
+#ifdef Q_OS_WIN
+        paths.append({"C:relative-folder", "/rooted-folder", "\\rooted-folder", "\\\\server"});
+#endif
+        for (const auto &group : {QString("save"), QString("history"), QString("clipboard")})
+            for (const auto &path : paths) QTest::newRow(qPrintable(group + '-' + path)) << group << path;
+    }
+    void directoryInputRejectsDependentPaths() {
+        QFETCH(QString, group); QFETCH(QString, path);
+        QTemporaryDir directory;
+        const auto initial = normalizeSettings({{"history", QJsonObject{{"dir", directory.filePath("history")}}}});
+        HistoryStore history(initial.value("history").toObject()); Hotkeys keys;
+        SettingsApply apply(initial, directory.filePath("settings.json"), keys, history);
+        SettingsDraft draft(apply);
+        draft.setSetting(group, "dir", path);
+        QVERIFY(!apply.busy()); QVERIFY(draft.statusError()); QCOMPARE(apply.settings(), initial);
+        QVERIFY(!QFile::exists(directory.filePath("settings.json")));
+        draft.setSetting(group, "dir", initial.value(group).toObject().value("dir").toString());
+        QVERIFY(!draft.statusError());
+    }
     void normalizationValidatesKnownFieldsAndKeepsUnknownSettings() {
         const auto form = normalizeSettings({{"clipboard", QJsonObject{{"maxItems", 0}, {"enabled", "false"}}},
             {"capture", QJsonObject{{"afterSelectAction", "unknown"}}}, {"future", QJsonObject{{"keep", 42}}}});

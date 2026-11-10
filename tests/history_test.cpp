@@ -204,6 +204,12 @@ private slots:
         configure(store, preferences("relative-path"), directory.filePath("settings.json"));
         QTRY_COMPARE(saved.count(), 2);
         QVERIFY(!saved[1][0].toBool());
+#ifdef Q_OS_WIN
+        configure(store, preferences("C:relative-history"), directory.filePath("settings.json"));
+        QTRY_COMPARE(saved.count(), 3);
+        QVERIFY(!saved[2][0].toBool());
+        QCOMPARE(store.directory(), source);
+#endif
     }
     void shutdownFlushesAcceptedWrites() {
         QTemporaryDir directory;

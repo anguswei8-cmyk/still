@@ -22,6 +22,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScreen>
+#include <QScopeGuard>
 #include <QStyleOptionButton>
 #include <QTimer>
 #include <QTransform>
@@ -285,13 +286,15 @@ void Pin::keyPressEvent(QKeyEvent *event) {
 }
 
 void Pin::contextMenuEvent(QContextMenuEvent *event) {
-    QMenu menu(this);
-    menu.setObjectName("PinMenu");
+    // Closing all pins can destroy this menu before exec() returns.
+    QPointer<QMenu> menu = new QMenu(this);
+    const auto cleanup = qScopeGuard([&] { delete menu.data(); });
+    menu->setObjectName("PinMenu");
     const bool textSelected = allTextSelected_ || !selectedText(ocr_, anchor_, cursor_).isEmpty();
-    menu.addAction(textSelected ? t("复制选中文字") : t("复制图片"), this, [this] { copy(); });
-    menu.addAction(t("保存图片…"), this, [this] { save(); });
-    menu.addAction(t("编辑标注…"), this, [this] { emit editRequested(this); });
-    auto *more = menu.addMenu(t("更多操作"));
+    menu->addAction(textSelected ? t("复制选中文字") : t("复制图片"), this, [this] { copy(); });
+    menu->addAction(t("保存图片…"), this, [this] { save(); });
+    menu->addAction(t("编辑标注…"), this, [this] { emit editRequested(this); });
+    auto *more = menu->addMenu(t("更多操作"));
     more->setObjectName("PinMoreMenu");
     if (textSelected) more->addAction(t("复制图片"), this, [this] { copy(true); });
     auto *allText = more->addAction(t("复制全部文字"), this, [this] {
@@ -315,9 +318,9 @@ void Pin::contextMenuEvent(QContextMenuEvent *event) {
     restore->setObjectName("RestoreClosedPin");
     restore->setEnabled(canRestoreClosed_);
     more->addAction(t("关闭全部贴图"), this, &Pin::closeAllRequested);
-    menu.addSeparator();
-    menu.addAction(t("关闭"), this, &QWidget::close);
-    menu.exec(event->globalPos());
+    menu->addSeparator();
+    menu->addAction(t("关闭"), this, &QWidget::close);
+    menu->exec(event->globalPos());
 }
 
 void Pin::save(bool quick) {

@@ -2716,7 +2716,8 @@ private slots:
         if (QGuiApplication::platformName() == "cocoa" && !QTest::qWaitForWindowActive(editor, 15000))
             QSKIP("Native keyboard/focus checks need an unlocked desktop and foreground test app");
 #endif
-        QTRY_VERIFY(editor->isActiveWindow()); canvas->setFocus();
+        QTRY_COMPARE(QApplication::activeWindow(), editor.data()); canvas->setFocus();
+        QTRY_VERIFY(canvas->hasFocus());
         auto point = [&](QPointF current) {
             const QRectF view = canvas->imageRect(); const auto size = canvas->document.size();
             return (view.topLeft() + QPointF(current.x() * view.width() / size.width(), current.y() * view.height() / size.height())).toPoint();

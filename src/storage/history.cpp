@@ -203,7 +203,7 @@ void HistoryStore::reconfigure(const QJsonObject &options, std::function<bool(QS
     connect(watcher, &QFutureWatcher<QPair<bool, QString>>::finished, this, &HistoryStore::completeConfiguration);
     watcher->setFuture(QtConcurrent::run(&pool_, [this, next = options, commit = std::move(commit)]() -> QPair<bool, QString> {
         const QString requested = next.value("dir").toString().trimmed();
-        if (!requested.isEmpty() && !QDir::isAbsolutePath(requested)) return {false, t("历史目录必须使用完整路径")};
+        if (!requested.isEmpty() && !isAbsoluteDirectoryPath(requested)) return {false, t("历史目录必须使用完整路径")};
         const QString source = historyDirectory(options_), destination = historyDirectory(next);
         auto effective = next;
         if (requested.isEmpty()) effective["dir"] = destination;

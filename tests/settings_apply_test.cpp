@@ -43,13 +43,14 @@ private slots:
         SettingsApply apply(initial, file, keys, history);
         QSignalSpy finished(&apply, &SettingsApply::finished), activated(&keys, &Hotkeys::activated);
         const int previousId = nativeIdForTest(QKeySequence("Ctrl+1"));
+        QCOMPARE(readJson(file), initial);
         QString error;
         QVERIFY2(apply.applyBackup({{"hotkeys", QJsonObject{{"capture", "Ctrl+3"}}}, {"ocr", QJsonObject{{"language", "en-US"}}}}, &error), qPrintable(error));
         QVERIFY(apply.busy()); QVERIFY(finished.isEmpty()); QCOMPARE(apply.settings(), initial);
-        QCOMPARE(readJson(file), initial); QCOMPARE(keys.sequence(0), QKeySequence("Ctrl+1"));
+        QCOMPARE(keys.sequence(0), QKeySequence("Ctrl+1"));
         const int reservedId = nativeIdForTest(QKeySequence("Ctrl+3")); QVERIFY(reservedId);
         QVERIFY(keys.dispatchNative(previousId)); QVERIFY(!keys.dispatchNative(reservedId)); QCOMPARE(activated.size(), 1);
-        QTRY_VERIFY(!apply.busy()); QCOMPARE(finished.size(), 1); QVERIFY(finished.first()[0].toBool());
+        QTRY_VERIFY(!apply.busy()); QCOMPARE(finished.size(), 1); QVERIFY2(finished.first()[0].toBool(), qPrintable(finished.first()[3].toString()));
         QVERIFY(finished.first()[2].toStringList().isEmpty());
         QCOMPARE(keys.sequence(0), QKeySequence("Ctrl+3"));
         QVERIFY(!keys.dispatchNative(previousId)); QVERIFY(keys.dispatchNative(reservedId));

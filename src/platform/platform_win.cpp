@@ -145,7 +145,8 @@ bool Hotkeys::nativeEventFilter(const QByteArray &, void *message, qintptr *resu
     const auto *msg = static_cast<MSG *>(message);
     if (msg->message != WM_HOTKEY) return false;
     if (!dispatchNative(int(msg->wParam))) return false;
-    *result = 0;
+    // Qt passes no result pointer for thread messages such as WM_HOTKEY.
+    if (result) *result = 0;
     return true;
 }
 

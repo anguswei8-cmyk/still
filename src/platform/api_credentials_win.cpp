@@ -28,7 +28,8 @@ ApiCredential readApiCredential(const QString &account) {
 
 bool writeApiCredential(const QString &account, const QByteArray &key, QString *error) {
     error->clear();
-    static_assert(ApiCredentialMaxBytes == CRED_MAX_CREDENTIAL_BLOB_SIZE);
+    // MinGW still defines the legacy 512-byte limit; supported Windows allows 5 * 512 bytes.
+    static_assert(ApiCredentialMaxBytes == 5 * 512);
     if (key.isEmpty() || key.size() > ApiCredentialMaxBytes) {
         *error = t("API 密钥必须为 1 至 2560 字节");
         return false;

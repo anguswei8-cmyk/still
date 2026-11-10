@@ -23,6 +23,7 @@
 #include <QShortcut>
 #include <QSpinBox>
 #include <QSignalBlocker>
+#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QStyle>
 #include <QStyleFactory>
@@ -33,28 +34,30 @@
 namespace still {
 
 bool saveWithDialog(QWidget *parent, const QImage &image, const QJsonObject &options) {
-    QFileDialog dialog(parent, t("保存截图"), uniqueImagePath(imageExportDirectory(options), imageExportFileName(options)));
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setNameFilters({t("PNG 图像 (*.png)"), t("JPEG 图像 (*.jpg *.jpeg)")});
+    // Global actions can delete the parent while the dialog's nested event loop is running.
+    QPointer<QFileDialog> dialog = new QFileDialog(parent, t("保存截图"), uniqueImagePath(imageExportDirectory(options), imageExportFileName(options)));
+    const auto cleanup = qScopeGuard([&] { delete dialog.data(); });
+    dialog->setAcceptMode(QFileDialog::AcceptSave);
+    dialog->setNameFilters({t("PNG 图像 (*.png)"), t("JPEG 图像 (*.jpg *.jpeg)")});
     // Resolve the suffix inside the dialog, so its overwrite confirmation checks the actual target.
     const bool jpeg = options.value("format").toString() == "jpeg";
-    dialog.selectNameFilter(jpeg ? t("JPEG 图像 (*.jpg *.jpeg)") : t("PNG 图像 (*.png)"));
-    dialog.setDefaultSuffix(jpeg ? "jpg" : "png");
-    QObject::connect(&dialog, &QFileDialog::filterSelected, &dialog, [&dialog](const QString &filter) {
+    dialog->selectNameFilter(jpeg ? t("JPEG 图像 (*.jpg *.jpeg)") : t("PNG 图像 (*.png)"));
+    dialog->setDefaultSuffix(jpeg ? "jpg" : "png");
+    QObject::connect(dialog.data(), &QFileDialog::filterSelected, dialog.data(), [dialog](const QString &filter) {
         const QString suffix = filter.startsWith("JPEG") ? "jpg" : "png";
-        dialog.setDefaultSuffix(suffix);
-        const auto files = dialog.selectedFiles();
+        dialog->setDefaultSuffix(suffix);
+        const auto files = dialog->selectedFiles();
         if (!files.isEmpty()) {
             const QFileInfo file(files.first());
             if (!file.isDir()) {
                 const QString extension = file.suffix().toLower();
                 const QString stem = extension == "png" || extension == "jpg" || extension == "jpeg" ? file.completeBaseName() : file.fileName();
-                dialog.selectFile(stem + '.' + suffix);
+                dialog->selectFile(stem + '.' + suffix);
             }
         }
     });
-    if (dialog.exec() != QDialog::Accepted || dialog.selectedFiles().isEmpty()) return false;
-    const QString path = dialog.selectedFiles().first();
+    if (dialog->exec() != QDialog::Accepted || !dialog || dialog->selectedFiles().isEmpty()) return false;
+    const QString path = dialog->selectedFiles().first();
     QString error;
     if (!saveImage(image, path, &error, -1, options.value("jpegQuality").toInt(95), options.value("pngCompression").toInt(50))) { QMessageBox::warning(parent, t("保存失败"), error); return false; }
     return true;

@@ -1,12 +1,12 @@
 # Still 后续迭代计划
 
-更新日期：2026-11-07。范围：Still 的 Windows/macOS 桌面产品能力与后续实现路线。
+更新日期：2026-11-10。范围：Still 的 Windows/macOS 桌面产品能力与后续实现路线。
 
 本文按当前源代码记录已有能力和待办，保留 P0–P3 路线与验收条件。高级识别、翻译、图像修复、录制增强和配置同步作为后续方向保留，不以账号、会员、订阅或付费解锁区分功能。
 
 ## 当前目标：只完成 P1
 
-按用户最新要求，本次目标仅推进 P1（ST-101 至 ST-110），以已有实现为基线逐项补齐最小交付、相关回归和验收记录。ST-109 的Mac增量已验证，Windows源码已接入但未在原生环境编译或运行。用户确认目前只有这台Mac，Windows原生项目保留待验收。ST-110 已按用户选择接入 OCR 文字校对首增量，本地模拟服务和 Mac 后台钥匙串专项通过；6组相关回归已通过，真实远端及剩余原生验收未完成，本项保持部分完成。
+按用户最新要求，本次目标仅推进 P1（ST-101 至 ST-110），以已有实现为基线逐项补齐最小交付、相关回归和验收记录。ST-109 的 Mac 增量已验证；2026-11-10 已开始 Windows 实机验证，Release 构建及 26/26 组 CTest 通过，任务计划程序、系统凭据、英文 OCR、长截图及部分原生界面专项通过，完整范围与剩余验收见 [Windows 验证记录](WINDOWS-VALIDATION.md)。ST-110 已按用户选择接入 OCR 文字校对首增量，本地模拟服务和 Mac 后台钥匙串专项通过；Windows 系统凭据及真实超时现已验证，真实远端及剩余原生验收未完成，本项保持部分完成。
 
 P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2、P3 仅保留在路线图中，不属于当前目标，不自动进入开发。完成 P1 的交付和验收后结束本次目标，不等待 P2、P3。环境受限的验收明确标记待验收，不能把编译、离屏通过或跳过当作原生验收完成。继续保护现有截图、贴图、OCR、剪贴板、存储行为、用户数据和工作区已有改动。
 
@@ -45,7 +45,7 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 | C08 | [clipboard_controller.cpp](../src/clipboard/clipboard_controller.cpp)、[clipboard_archive.cpp](../src/clipboard/clipboard_archive.cpp)、[image_copy.cpp](../src/clipboard/image_copy.cpp)、[history.cpp](../src/storage/history.cpp)：剪贴板历史、搜索/固定/重放、图片/临时文件复制、配额、目录迁移与截图历史 |
 | C09 | [store.cpp](../src/storage/store.cpp)、[image_export.cpp](../src/storage/image_export.cpp)、[pin_session.cpp](../src/storage/pin_session.cpp)、[region_presets.cpp](../src/storage/region_presets.cpp)：数据目录兼容、原子保存、文件名模板、无覆盖快速保存、独立贴图会话和版本化命名区域预设；保留的旧配置字段不等于已接通功能 |
 | C10 | [settings_test.cpp](../tests/settings_test.cpp)、[settings_backup_test.cpp](../tests/settings_backup_test.cpp)、[settings_backup_dialog_test.cpp](../tests/settings_backup_dialog_test.cpp)、[ui_test.cpp](../tests/ui_test.cpp)、[ocr_result_dialog_test.cpp](../tests/ocr_result_dialog_test.cpp)、[pin_session_test.cpp](../tests/pin_session_test.cpp)、[region_presets_test.cpp](../tests/region_presets_test.cpp)、[capture_presets_test.cpp](../tests/capture_presets_test.cpp)、[native_test.cpp](../tests/native_test.cpp)：界面、配置备份／导入、OCR校对、贴图会话、区域预设回归与原生功能验证入口 |
-| C11 | [startup.h](../src/platform/startup.h)、[startup_mac.mm](../src/platform/startup_mac.mm)、[startup_win.cpp](../src/platform/startup_win.cpp)、[startup_task.cpp](../src/platform/startup_task.cpp)、[StartupRow.qml](../src/qml/StartupRow.qml)、[startup_native_test.cpp](../tests/startup_native_test.cpp)、[startup_task_test.cpp](../tests/startup_task_test.cpp)、[startup_windows_test.cpp](../tests/startup_windows_test.cpp)：本机登录启动、平台管理入口及隔离后台测试；Mac已验证登记范围，Windows源码接入但原生编译／运行待验收 |
+| C11 | [startup.h](../src/platform/startup.h)、[startup_mac.mm](../src/platform/startup_mac.mm)、[startup_win.cpp](../src/platform/startup_win.cpp)、[startup_task.cpp](../src/platform/startup_task.cpp)、[StartupRow.qml](../src/qml/StartupRow.qml)、[startup_native_test.cpp](../tests/startup_native_test.cpp)、[startup_task_test.cpp](../tests/startup_task_test.cpp)、[startup_windows_test.cpp](../tests/startup_windows_test.cpp)：本机登录启动、平台管理入口及隔离后台测试；Mac已验证登记范围，Windows编译及隔离系统任务登记／撤销等专项已验证，实际重新登录待验收 |
 | C12 | [api_proofreader.cpp](../src/imaging/api_proofreader.cpp)、[api_proofread_dialog.cpp](../src/imaging/api_proofread_dialog.cpp)、[api_profile.cpp](../src/settings/api_profile.cpp)、[api_settings_dialog.cpp](../src/settings/api_settings_dialog.cpp)、[api_credentials.h](../src/platform/api_credentials.h)、[api_credentials_mac.mm](../src/platform/api_credentials_mac.mm)、[api_credentials_win.cpp](../src/platform/api_credentials_win.cpp)：显式文字快照校对、预览／应用、独立非密钥 profile 和按地址隔离的系统凭据；回归入口为 `tests/api_*` 与 C10 的 OCR 结果用例 |
 
 ## 能力目标与当前差距
@@ -84,7 +84,7 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 | F28 | MP4/GIF/WebP 录屏、暂停、音频和录制增强 | 缺少；项目未引入录制流程，C01/C02/C05 | ST-301 |
 | F29 | 快速保存、文件名变量、重名策略、格式/质量选项 | 部分：已接通快速保存、模板预览、数字后缀、PNG 压缩/JPEG 质量、默认目录、保存后复制及复制临时图像文件；Mac Finder及退出后粘贴通过，其他编码取决于writer，Windows待验收，C03/C07/C08/C09 | ST-101 |
 | F30 | 配置导入导出、单项/全部恢复默认 | 部分：已有版本化备份、严格导入、全部默认和当前表单单项默认；完整跨平台原生验收待补，C07/C09 | ST-108 |
-| F31 | 开机启动 | 部分：Mac登记／查询／撤销及同卷文件系统移动已验证；Windows Task Scheduler源码与公共XML测试已接入，Windows编译／系统登记、重新登录及Finder／跨卷移动仍待验收，C07/C11 | ST-109 |
+| F31 | 开机启动 | 部分：Mac登记／查询／撤销及同卷文件系统移动已验证；Windows Task Scheduler编译、公共XML及隔离系统登记测试已通过；实际重新登录及Finder／跨卷移动仍待验收，C07/C11 | ST-109 |
 | F32 | 自定义动作、应用忽略列表、局部快捷键、鼠标映射 | 部分：八类全局动作可改键并处理冲突，局部键和鼠标行为主要固定，C01/C04/C07 | ST-209 |
 | F33 | 托盘点击动作、悬浮工具栏、按钮排列、主题细调 | 部分：有托盘菜单、固定工具栏、中英和系统/浅深主题，没有完整定制，C01/C03/C07 | ST-209；外观细调按需求追加 |
 | F34 | 持久剪贴板历史、搜索/固定、目录迁移和配额 | 已有独立实现，C08；作为核心能力持续维护 | 继续维护 |
@@ -131,7 +131,7 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 | ST-106 | F03/F04，可取消延时、当前运行中重复上次区域、像素宽高、固定比例及命名区域预设已实现；完整跨平台实机验收待补 | 倒计时可取消，不提前冻结屏幕；区域按实际屏幕/DPI 映射；外接屏拔除后提示重新选择；数字与鼠标调整同步。先矩形，异形区域留到 P2。 |
 | ST-107 | F13，原文／校对结果、显式换行／空格整理及复制已实现并通过 Mac 回归；TextEdit复制拖出及接收端撤销／重做通过，Windows待验收 | 可查看/修改结果，选择保留/移除换行、空格处理；保留原始结果，不默认破坏代码或表格排版；复制和文本拖出可用。 |
 | ST-108 | F30，本地配置备份、预览／严格导入、全部默认与当前表单单项默认已实现；Mac系统文件／确认面板通过，Windows待验收 | 文件带版本；导入前校验并保留现有配置，失败不部分写入；目录、快捷键冲突明确反馈；不把机器绝对路径盲目应用到另一台设备。 |
-| ST-109 | F31，Mac登记及同卷文件系统移动增量已验证；Windows源码已接入但原生编译、系统登记及实际登录／Finder或跨卷移动仍待验收 | 开关与真实系统登记一致；关闭或应用移动后可处理失效登记；与平台授权、打包结果一起验收，不只保存一个布尔字段。 |
+| ST-109 | F31，Mac登记及同卷文件系统移动增量已验证；Windows编译及隔离系统任务登记／撤销、外部禁用、旧路径修复已验证；实际登录／Finder或跨卷移动仍待验收 | 开关与真实系统登记一致；关闭或应用移动后可处理失效登记；与平台授权、打包结果一起验收，不只保存一个布尔字段。 |
 | ST-110 | 部分：首个实际 API 功能为 OCR 文字校对；地址／模型／系统密钥、连接测试、显式发送及预览应用已接入，相关回归通过，真实远端与剩余原生验收待补，C12 | 本地处理不要求密钥；显式选择选区或整稿及目的服务，支持连通性检查、取消、错误反馈和真实用量；先预览再应用、原文和撤销保留。密钥进入系统凭据存储，不进入日志或普通配置导出；不得静默从本地切到云端。 |
 
 2026-11-06 ST-101 第二个增量：新增默认关闭的 `save.copyAsFile`，实际接入截图/长截图结果、编辑器、贴图和保存后复制，按现有模板与 PNG/JPEG 编码参数生成文件 URL。选中的 OCR 文字仍为文字，剪贴板历史仍重放原格式。编码完成前不替换剪贴板；临时文件不随函数返回、剪贴板更换或窗口关闭删除，应用退出也不主动删除。当前使用系统临时目录且不另设配额，系统清理后文件历史引用可能失效；长期保留应正常保存。

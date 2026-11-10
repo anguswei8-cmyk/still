@@ -40,7 +40,10 @@ private slots:
         QCOMPARE(service.requests.size(), 1);
         const auto request = service.requests.first();
         QVERIFY(request.startsWith("POST /v1/chat/completions HTTP/1.1\r\n"));
-        QVERIFY(request.contains("Authorization: Bearer fixture-key\r\n"));
+        QByteArray authorization;
+        for (const auto &header : service.requestHeaders.split('\n'))
+            if (header.toLower().startsWith("authorization:")) authorization = header.mid(14).trimmed();
+        QCOMPARE(authorization, QByteArray("Bearer fixture-key"));
         const auto json = requestBody(request);
         QCOMPARE(json.value("model").toString(), QString("specific-model"));
         QCOMPARE(json.value("stream"), QJsonValue(false)); QCOMPARE(json.value("store"), QJsonValue(false));
@@ -56,7 +59,7 @@ private slots:
         Service service; auto json = QJsonDocument::fromJson(service.body).object(); json.remove("usage"); service.body = QJsonDocument(json).toJson();
         ApiProofreader client; QSignalSpy finished(&client, &ApiProofreader::finished);
         client.start(service.endpoint(), "local-model", {}, "snapshot"); QTRY_COMPARE(finished.count(), 1);
-        QVERIFY(!service.requests.first().contains("Authorization:"));
+        QVERIFY(!service.requestHeaders.toLower().contains("\r\nauthorization:"));
         const auto answer = result(finished); QVERIFY(answer.error.isEmpty()); QCOMPARE(answer.inputTokens, qint64(-1)); QCOMPARE(answer.outputTokens, qint64(-1)); QCOMPARE(answer.totalTokens, qint64(-1));
     }
     void untrustedConfiguration_data() {

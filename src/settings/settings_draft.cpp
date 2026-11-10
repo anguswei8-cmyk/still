@@ -2,6 +2,7 @@
 #include "settings_apply.h"
 #include "ui/i18n.h"
 #include "storage/image_export.h"
+#include "storage/store.h"
 #include <cmath>
 #include <optional>
 
@@ -178,6 +179,11 @@ void SettingsDraft::setDraft(const QString &group, const QString &key, const QVa
 void SettingsDraft::setSetting(const QString &group, const QString &key, const QVariant &value) {
     const auto row = field(group, key); if (row.isEmpty()) return;
     const auto valid = settingValue(row, value);
+    if (row.value("type") == "directory" && valid && !valid->toString().isEmpty() && !isAbsoluteDirectoryPath(valid->toString())) {
+        status_ = t("目录必须使用完整路径，或留空使用默认目录。");
+        validationErrorField_ = group + '.' + key;
+        statusError_ = true; emit statusChanged(); return;
+    }
     if (!valid) {
         if (row.value("type") == "template") {
             status_ = t("文件名无效：请使用普通文字和 {date}、{time}、{ms}，不要包含路径或特殊字符。");

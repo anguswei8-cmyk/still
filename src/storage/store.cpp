@@ -13,6 +13,19 @@
 
 namespace still {
 
+bool isAbsoluteDirectoryPath(const QString &path) {
+    if (path.contains(QChar::Null)) return false;
+#ifdef Q_OS_WIN
+    // Qt accepts C:folder and /folder, whose targets still depend on a current drive/directory.
+    const QString normalized = QDir::fromNativeSeparators(path);
+    if (normalized.startsWith("//")) return normalized.mid(2).split('/', Qt::SkipEmptyParts).size() >= 2;
+    return normalized.size() >= 3 && ((normalized[0] >= 'A' && normalized[0] <= 'Z') || (normalized[0] >= 'a' && normalized[0] <= 'z'))
+        && normalized[1] == ':' && normalized[2] == '/';
+#else
+    return QDir::isAbsolutePath(path);
+#endif
+}
+
 QString dataDirectory() {
     const QString overridePath = qEnvironmentVariable("STILL_DATA_DIR", qEnvironmentVariable("PIXCLONE_DATA_DIR"));
     if (!overridePath.isEmpty()) return QDir(overridePath).absolutePath();

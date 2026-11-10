@@ -5,8 +5,13 @@
 #include <QFileInfo>
 #include <QHash>
 #include <QSet>
+#include <QScopeGuard>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
+#ifdef Q_OS_WIN
+#include <qt_windows.h>
+#include <sddl.h>
+#endif
 
 namespace still::startup_task {
 namespace {
@@ -64,6 +69,24 @@ bool boolean(const Values &values, const QString &key, bool defaultValue, bool e
 
 bool zeroDuration(const QString &value) {
     return value == "PT0S" || value == "PT0M" || value == "PT0H" || value == "P0D";
+}
+
+bool sameUser(const QString &user, const QString &sid) {
+    if (user == sid) return true;
+#ifdef Q_OS_WIN
+    // Task Scheduler can serialize a logon trigger's SID as DOMAIN\\user.
+    BYTE resolved[SECURITY_MAX_SID_SIZE];
+    wchar_t domain[256];
+    DWORD sidSize = sizeof(resolved), domainSize = sizeof(domain) / sizeof(domain[0]);
+    SID_NAME_USE use;
+    if (!LookupAccountNameW(nullptr, reinterpret_cast<LPCWSTR>(user.utf16()), resolved, &sidSize, domain, &domainSize, &use)) return false;
+    LPWSTR text = nullptr;
+    if (!ConvertSidToStringSidW(resolved, &text)) return false;
+    const auto release = qScopeGuard([&] { LocalFree(text); });
+    return QString::fromWCharArray(text) == sid;
+#else
+    return false;
+#endif
 }
 
 bool sameExecutable(const QString &command, const QString &executablePath) {
@@ -190,11 +213,11 @@ Inspection inspect(const QString &xml, const QString &executablePath, const QStr
 
     matches &= triggerCount == 1 && principalCount == 1 && actionCount == 1;
     matches &= only(trigger, {"Enabled", "UserId", "Delay", "ExecutionTimeLimit"});
-    matches &= boolean(trigger, "Enabled", true, true) && trigger.value("UserId") == sid;
+    matches &= boolean(trigger, "Enabled", true, true) && sameUser(trigger.value("UserId"), sid);
     matches &= zeroDuration(trigger.value("Delay", "PT0M"));
     matches &= zeroDuration(trigger.value("ExecutionTimeLimit", "PT72H"));
     matches &= only(principal, {"UserId", "LogonType", "RunLevel", "DisplayName"});
-    matches &= principal.value("UserId") == sid && principal.value("LogonType") == "InteractiveToken";
+    matches &= sameUser(principal.value("UserId"), sid) && principal.value("LogonType") == "InteractiveToken";
     matches &= principal.value("RunLevel", "LeastPrivilege") == "LeastPrivilege" && !principalId.isEmpty() && context == principalId;
     matches &= only(action, {"Command", "Arguments", "WorkingDirectory"}) && action.value("Arguments").isEmpty() && action.value("WorkingDirectory").isEmpty();
     matches &= sameExecutable(action.value("Command"), executablePath);

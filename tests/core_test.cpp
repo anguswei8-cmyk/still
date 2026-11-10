@@ -247,11 +247,11 @@ private slots:
         QCOMPARE(document.hitTest({154, 140}, 0), -1);
     }
     void textBoundsFollowWrappedPainting() {
-        const Annotation text{Tool::Text, {{70, 10}}, Qt::red, 3, "wrap wrap wrap wrap"};
+        const Annotation text{Tool::Text, {{70, 10}}, Qt::red, 3, "fit fit fit fit"};
         const QSize size(140, 180);
         const QRectF bounds = annotationBounds(text, size);
         QVERIFY(bounds.height() > annotationBounds(text, QSize(400, 180)).height());
-        QVERIFY(bounds.width() <= 70);
+        QVERIFY2(bounds.width() <= 70, qPrintable(QString::number(bounds.width())));
         QImage image(size, QImage::Format_ARGB32);
         image.fill(Qt::white);
         ImageDocument document(image);

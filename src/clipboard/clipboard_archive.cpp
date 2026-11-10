@@ -172,7 +172,7 @@ ClipboardArchive::ClipboardArchive(QJsonObject options, QObject *parent) : QObje
     enqueue([](State &state) {
         Result result;
         const QString requested = state.options.value("dir").toString().trimmed();
-        if (!requested.isEmpty() && !QDir::isAbsolutePath(requested)) { state.blocked = result.error = t("剪贴板目录必须使用完整路径"); return result; }
+        if (!requested.isEmpty() && !isAbsoluteDirectoryPath(requested)) { state.blocked = result.error = t("剪贴板目录必须使用完整路径"); return result; }
         if (!openRoot(state.root, state.lock, state.blocked) || !readIndex(state.root, state.entries, state.blocked)) result.error = state.blocked;
         else { sortEntries(state.entries); cleanup(state.root, state.entries); }
         return result;
@@ -301,7 +301,7 @@ bool ClipboardArchive::reconfigureBlocking(QJsonObject options, std::function<bo
         const auto finish = qScopeGuard([&] { request->done.release(); });
         QString &error = request->error;
         const QString requested = options.value("dir").toString().trimmed();
-        if (!requested.isEmpty() && !QDir::isAbsolutePath(requested)) { error = t("剪贴板目录必须使用完整路径"); return; }
+        if (!requested.isEmpty() && !isAbsoluteDirectoryPath(requested)) { error = t("剪贴板目录必须使用完整路径"); return; }
         const QString destination = resolveDirectory(options);
         const bool ownsSource = bool(state->lock) && state->blocked.isEmpty();
         const QString from = normalized(state->root), to = normalized(destination);
