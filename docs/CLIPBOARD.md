@@ -1,5 +1,7 @@
 # 剪贴板管理
 
+> 旧设计工具的截图、审查记录及局部说明已于 2026-11-12 清理；下文保留当时的验收记录。
+
 日期：2026-10-30。Qt Widgets 实现，复用既有图标、图片编辑器、贴图和保存流程，无新增第三方依赖。
 
 ## 操作
@@ -43,6 +45,6 @@ Qt 剪贴板/MIME 行为参考 [QClipboard](https://doc.qt.io/qt-6/qclipboard.ht
 
 HTML 增量已通过 Mac 全量构建与非 integration CTest 12/12 组；资源隔离、可见文本复制、HTML-only 后备提取、会话兼容及失败保护均有回归。原生混合恢复/真实退出和文字排版截图8 passed，完整计数及日志见 ITERATION-PLAN.md；Windows 和全部辅助功能仍待验收。
 
-旧独立面板的原生完整流程在 Windows 单独运行成功，证据为 `build/clipboard-native-interactive-results.txt`。当前单窗口版本的真实系统联动需在前台权限环境重新验收，不能沿用旧证据视为已通过。当前主窗口截图为 `.impeccable/review/main-clipboard.png` 与 `main-clipboard-settings.png`，使用合成数据；`clipboard-*.png` 只是组件测试抓图，不代表产品还存在独立窗口。
+旧独立面板的原生完整流程在 Windows 单独运行成功，证据为 `build/clipboard-native-interactive-results.txt`。当前单窗口版本的真实系统联动需在前台权限环境重新验收，不能沿用旧证据视为已通过。当前主窗口截图为 `main-clipboard.png` 与 `main-clipboard-settings.png`，使用合成数据；`clipboard-*.png` 只是组件测试抓图，不代表产品还存在独立窗口。
 
 未验证 Mac、跨权限目标应用、所有第三方私有格式、断电恢复及数小时内存压力。不宣称系统中所有剪贴板格式都能完整重放。

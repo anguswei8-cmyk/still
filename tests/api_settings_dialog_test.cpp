@@ -137,7 +137,7 @@ private slots:
         QFETCH(QString, language); QFETCH(QString, theme); QFETCH(QSize, size);
         InterfacePreferences::instance().apply({{"language", language}, {"theme", theme}});
         ApiSettingsDialog dialog; dialog.setAttribute(Qt::WA_DeleteOnClose, false); dialog.resize(size); dialog.show();
-        const QString folder = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../.impeccable/review/offscreen"); QVERIFY(QDir().mkpath(folder));
+        const QString folder = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../output/visual/offscreen"); QVERIFY(QDir().mkpath(folder));
         const auto capture = [&](const QString &state) {
             QApplication::processEvents();
             return dialog.grab().save(folder + "/api-settings-" + state + '-' + QTest::currentDataTag() + ".png");

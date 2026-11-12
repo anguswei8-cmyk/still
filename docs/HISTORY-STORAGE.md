@@ -1,5 +1,7 @@
 # 历史目录、容量与响应优化
 
+> 旧设计工具的截图、审查记录及局部说明已于 2026-11-12 清理；下文保留当时的验收记录。
+
 日期：2026-10-29。适用 Qt 主实现，保留图标工具栏和已有 OCR 内存修复。
 
 ## 使用
@@ -33,4 +35,4 @@ HistoryStore 在独立读队列中扫描当前历史目录、统计容量并解�
 
 Windows 合成 2560×1440 PNG 对比中，本轮同一写入函数同步调用约 116–119 ms，后台入队约 0.05–0.12 ms（最新记录见 `build/history-results.txt`；不同设备数值会变化）。原 1920×12000 长截图探针的进程私有提交峰值从约 211.23 MiB 降到 188.38 MiB，释放后约 3.72 MiB；新证据为 `build/memory-audit/scroll-peak-history-fix.json`。
 
-原生设置预览在 `.impeccable/review/settings-history-content.png` 和 `settings-history-compact.png`。测试及迁移均用临时目录，未替用户移动真实 C 盘历史。尚未做 Mac 实机、真实跨磁盘断电恢复或数小时慢盘压力验收。
+原生设置预览在 `settings-history-content.png` 和 `settings-history-compact.png`。测试及迁移均用临时目录，未替用户移动真实 C 盘历史。尚未做 Mac 实机、真实跨磁盘断电恢复或数小时慢盘压力验收。

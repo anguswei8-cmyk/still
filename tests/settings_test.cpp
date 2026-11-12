@@ -142,7 +142,7 @@ class SettingsTest : public QObject {
         click(item("Navigation" + QString::number(page)));
     }
     QString reviewPath(const QString &name) const {
-        const QString path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../.impeccable/review")
+        const QString path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../output/visual")
             + (QGuiApplication::platformName() == "offscreen" ? "/offscreen" : qEnvironmentVariable("QT_SCALE_FACTOR") == "1.5" ? "/hidpi" : "");
         QDir().mkpath(path); return path + "/qml-" + name + ".png";
     }
@@ -2162,7 +2162,7 @@ private slots:
                 prompted = true;
                 auto *skip = box->findChild<QCheckBox *>("PinCloseSkip"); QVERIFY(skip); skip->setChecked(true);
                 if (QGuiApplication::platformName() == "windows") {
-                    QString path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../.impeccable/review/actions");
+                    QString path = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../output/visual/actions");
                     if (qEnvironmentVariable("QT_SCALE_FACTOR") == "1.5") path += "/hidpi";
                     QDir().mkpath(path);
                     QVERIFY(box->grab().save(path + "/pin-close-" + language + "-" + theme + ".png"));

@@ -1,5 +1,7 @@
 # 拾影 / Still Qt 交接
 
+> 旧设计工具的截图、审查记录及局部说明已于 2026-11-12 清理；下文保留当时的验收记录。
+
 更新日期：2026-11-07。当前主实现为 C++17 / Qt >= 6.8，版本 0.2.0。主窗口、侧栏、剪贴板与五类设置使用 Qt Quick/QML；截图选区、编辑器、贴图及原生辅助对话框保留 Widgets。
 
 ## 当前迭代
@@ -16,7 +18,7 @@ ST-102 新增 `imaging/pin_state.h` 与 `storage/pin_session.*`：PinState 保�
 
 正常退出前 Application 的 qApp Quit 事件过滤器先捕获未关闭窗口；Qt 随后产生的 Close 不能进入“最近关闭”栈，否则退出会误保存为空。析构等待在途读取，再在工作线程写整组新 PNG、原子提交 `PinSessions/session.json`，成功后只清理旧索引引用的目录。直接销毁控制器也保存当前贴图；无贴图活动时保留旧会话。该增量不提供崩溃恢复；保存失败保留旧文件并输出错误。`pin.restoreOnStartup` 默认false，正常退出时的隐藏贴图仍属于未关闭集合，恢复时显示。测试包含真实 QApplication.quit 子进程，不能仅以直接析构测试代替退出行为。
 
-Mac 首次显示窗口的原生回调可能覆盖先前的恢复坐标。Pin 先指定目标屏幕并设置可见范围内布局，再排队应用一次布局；不要改为固定延时或移除位置断言。`restoredPinUsesTheSavedScreen` 在两块真实屏幕上各重复15次，修复前失败、修复后通过；调试日志已从源码移除。最终非 integration CTest12/12通过；`pin-layout-final-results.txt` 为6 passed，覆盖双屏、关闭/重启恢复及真实退出。菜单独立审阅见 `.impeccable/review/compact-menu-design-review.md`，`ship` 仅限界面组织和所示视口。
+Mac 首次显示窗口的原生回调可能覆盖先前的恢复坐标。Pin 先指定目标屏幕并设置可见范围内布局，再排队应用一次布局；不要改为固定延时或移除位置断言。`restoredPinUsesTheSavedScreen` 在两块真实屏幕上各重复15次，修复前失败、修复后通过；调试日志已从源码移除。最终非 integration CTest12/12通过；`pin-layout-final-results.txt` 为6 passed，覆盖双屏、关闭/重启恢复及真实退出。菜单独立审阅见 `compact-menu-design-review.md`，`ship` 仅限界面组织和所示视口。
 
 按用户最新要求，贴图右键收为5个主入口，其他动作归“更多操作”；菜单栏图标收为6个主入口，贴图管理和额外截图动作进入二级菜单。所有回调与既有快捷键保留；后续功能优先放到合适分组，避免继续向主菜单堆叠。
 
@@ -202,9 +204,9 @@ ST-107手工交接已结束：用户已将首行“Still OCR drag sample”拖�
 
 当前QML主窗口默认1000×700、最小800×620，200px分组侧栏、32px工作区左右内边距（窗口宽<900时24px）、24px/500标题。Windows使用Segoe UI并为Han指定Microsoft YaHei UI回退，Mac的Helvetica Neue未实测。导航可见顺序映射后台页号[0,3,1,2,4,5]，方向键同序。页头仅计数、暂停与预览；44px搜索、32px短筛选无贯通基线。内容标题15px/500、片段13px、类型日期11px，单行64px、图片76px、多行／文件80px，间距2px；真实多行文字首个非空行作标题，后续行作片段。阅读栏无灰色外卡与重复标题，仅左分隔与20px内边距，MIME仅日期tooltip。主动作深墨／夜间浅墨反色，底部只保留一次Enter提示。设置有说明行68px、无说明行48px，仅分节18+1+18，无逐行线；输入9px圆角，浅填色，焦点细边。历史列表仍随内容增高至260px，短历史首屏可见操作。
 
-最新证据为 `.impeccable/review/qml-*.png`：23张Windows原生software渲染截图，覆盖中英文、深浅主题、预览、紧凑窗口、暗色按钮状态、独立迁移清理警告和真实临时文件URL的列表／预览。均使用隔离临时合成数据，无用户真实历史，不随产品发布。offscreen截图字体不可用，不作视觉证据；contact表仅作概览。设计规范见 `PRODUCT.md`、`DESIGN.md` 与 `.impeccable/surface-briefs/qml-shell.md`；旧截图和验收记录只保留历史意义。
+最新证据为 `qml-*.png`：23张Windows原生software渲染截图，覆盖中英文、深浅主题、预览、紧凑窗口、暗色按钮状态、独立迁移清理警告和真实临时文件URL的列表／预览。均使用隔离临时合成数据，无用户真实历史，不随产品发布。offscreen截图字体不可用，不作视觉证据；contact表仅作概览。设计规范见 `PRODUCT.md`、`DESIGN.md` 与 `qml-shell.md`；旧截图和验收记录只保留历史意义。
 
-工具栏渲染证据为 `.impeccable/review/*toolbar-current.png`；局部设计约定见 `.impeccable/surface-briefs/toolbars.md`。界面测试覆盖图标绘制、中文无障碍名称、快捷键、按钮动作和窄窗口的溢出入口。
+工具栏渲染证据为 `*toolbar-current.png`；局部设计约定见 `toolbars.md`。界面测试覆盖图标绘制、中文无障碍名称、快捷键、按钮动作和窄窗口的溢出入口。
 
 OCR 队列图片滞留和长截图启动失败首帧残留已修复，含修复前失败、修复后通过的回归测试。说明与探针前后数据见 `MEMORY-FIXES.md`。历史存储优化及长截图分配预算见 `HISTORY-STORAGE.md`；历史架构修复记录见 `ARCHITECTURE-FIXES.md`。当前共九组CTest，本轮Release构建、八组非集成测试通过。QML回归 `build/settings-results.txt` 为21 passed、0 failed，Windows原生 `build/settings-premium-native.txt` 为18 passed、0 failed、3个环境相关skipped；`build/settings-premium-hidpi.txt` 为Qt1.5倍真实鼠标／键盘侧栏与偏好4 passed，303条当前源字符串与305条英文catalog覆盖及占位符检查通过。本轮断言覆盖页头设置按钮移除、侧栏可见顺序键盘导航、真实多行标题／片段、文件路径显示及中英字体一致性。`premium-finish-review.md` 的ship仅覆盖本轮已评分项、文件路径场景及直接可见回归，共23张最终截图；`premium-direction-review.md`为独立结构诊断。
 

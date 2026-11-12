@@ -1,6 +1,5 @@
 # Product: 拾影 / Still
 
-<!-- impeccable:product-schema 1 -->
 
 ## Platform
 

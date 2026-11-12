@@ -174,7 +174,7 @@ private slots:
         hud.move(region.right() + 12, region.top());
         toolbar->move(region.right() - toolbar->width() + 1, region.bottom() + 12);
         QTest::qWait(150);
-        QString review = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../.impeccable/review");
+        QString review = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../output/visual");
         if (qEnvironmentVariable("QT_SCALE_FACTOR") == "1.5") review += "/hidpi";
         QDir().mkpath(review);
         if (language == "zh_CN" && theme == "light") {

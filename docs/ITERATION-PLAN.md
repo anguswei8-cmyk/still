@@ -1,5 +1,7 @@
 # Still 后续迭代计划
 
+> 旧设计工具的截图、审查记录及局部说明已于 2026-11-12 清理；下文保留当时的验收记录。
+
 更新日期：2026-11-10。范围：Still 的 Windows/macOS 桌面产品能力与后续实现路线。
 
 本文按当前源代码记录已有能力和待办，保留 P0–P3 路线与验收条件。高级识别、翻译、图像修复、录制增强和配置同步作为后续方向保留，不以账号、会员、订阅或付费解锁区分功能。
@@ -113,13 +115,13 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 
 2026-11-06 P0 贴图失活补验：新增 `settings_test.cpp::pinsStayVisibleWhenTheApplicationIsInactive`，注册为独立串行 integration `still_mac_pin_activation`。图片、纯文本与 HTML 三类贴图分别覆盖新建置顶、关闭再开启置顶和恢复非置顶布局，共9个窗口；先确认本应用激活及每个原生窗口可见，再协作切换到自有合成测试进程，确认目标激活、本应用失活后 Qt 和原生窗口仍可见。独立审查补强了等待100ms后、采样前再次确认激活状态的断言，避免期间切回导致假阳性，复验通过。现有生产代码通过，**未复现贴图自动隐藏的缺陷，未修改 PinWindow 的窗口策略**。最终原生 **3 passed / 0 skipped**（`cmake-build-debug/mac-pin-activation-results.txt`，2.085秒），CTest **1/1 通过**（`pin-inactive-final-ctest-results.txt`，3.09秒）；只证明这些样本在失活后未隐式隐藏，不证明窗口叠放、无遮挡像素或完整辅助功能。
 
-测试目标最终重编通过（`pin-inactive-final-build.txt`）；离屏仅验证平台前置条件，**2 passed / 1 skipped**（`pin-inactive-offscreen-results.txt`），不计为原生通过。初期沙箱无法连接窗口服务，日志仅含初始化标题；随后两次原生执行停在应用未激活的前置条件，当时只读系统状态确认再次锁屏，分别保留 `pin-inactive-sandbox-results.txt`、`pin-inactive-activation-precondition-results.txt`、`pin-inactive-locked-results.txt`，均不作为贴图缺陷证据。当前测试复用普通“打开剪贴板”入口建立前台条件，等待15秒后仍无法激活则明确跳过，满足前置条件后的实际切换与可见性断言保留。最终自身截图为 `.impeccable/review/qml-pin-inactive-{image,plain,html}.png`，仅合成内容。此轮未改生产行为，不重复无关全量测试；P0 其余待验收项及 ST-106 剩余增量保持。
+测试目标最终重编通过（`pin-inactive-final-build.txt`）；离屏仅验证平台前置条件，**2 passed / 1 skipped**（`pin-inactive-offscreen-results.txt`），不计为原生通过。初期沙箱无法连接窗口服务，日志仅含初始化标题；随后两次原生执行停在应用未激活的前置条件，当时只读系统状态确认再次锁屏，分别保留 `pin-inactive-sandbox-results.txt`、`pin-inactive-activation-precondition-results.txt`、`pin-inactive-locked-results.txt`，均不作为贴图缺陷证据。当前测试复用普通“打开剪贴板”入口建立前台条件，等待15秒后仍无法激活则明确跳过，满足前置条件后的实际切换与可见性断言保留。最终自身截图为 `qml-pin-inactive-{image,plain,html}.png`，仅合成内容。此轮未改生产行为，不重复无关全量测试；P0 其余待验收项及 ST-106 剩余增量保持。
 
 ### P1：优先补齐日常操作
 
 2026-11-06：ST-101 首个增量已实现：Ctrl/Cmd+Shift+S 快速保存，Ctrl/Cmd+S 保留对话框；选区、编辑器、贴图和长截图均接入。模板支持 `{date}`、`{time}`、`{ms}` 并预览，重名按数字后缀处理；先独占预留目标名，再用 QSaveFile 编码并提交，失败移除本次预留。PNG 压缩保持无损、JPEG 质量可调；设置更新现有窗口，保存失败保留内容。此项仍为**部分完成**，临时文件复制的后续增量见本节末尾。本机 Qt 6.12 枚举未提供 WebP/TIFF writer，未显示为可用格式；待有相应插件的构建环境验证后再接入，不新增无效选项。
 
-本增量在 Mac Qt 6.12 构建通过，非 integration CTest **11/11 组通过**；导出 9 passed、UI 35 passed、设置 40 passed / 12 环境 skipped。覆盖命名校验、已有文件及悬空链接保护、4 轮各 12 个不同图像的并发保存、PNG 无损/JPEG 质量、失败清理、快捷键与正常保存对话框、已有窗口设置更新。新增保存设置原生交互及中英/深浅/1000×740 与 800×620 布局 **7 passed**（`save-native-settings-results.txt`）；对应截图为 `.impeccable/review/qml-save-*.png`，仅合成数据与窗口自身截图。独立界面审阅 `ship` 仅覆盖此新增设置区域与所提供工具栏截图，不代表 Windows 或整个产品原生验收。测试日志均在 `cmake-build-debug`。
+本增量在 Mac Qt 6.12 构建通过，非 integration CTest **11/11 组通过**；导出 9 passed、UI 35 passed、设置 40 passed / 12 环境 skipped。覆盖命名校验、已有文件及悬空链接保护、4 轮各 12 个不同图像的并发保存、PNG 无损/JPEG 质量、失败清理、快捷键与正常保存对话框、已有窗口设置更新。新增保存设置原生交互及中英/深浅/1000×740 与 800×620 布局 **7 passed**（`save-native-settings-results.txt`）；对应截图为 `qml-save-*.png`，仅合成数据与窗口自身截图。独立界面审阅 `ship` 仅覆盖此新增设置区域与所提供工具栏截图，不代表 Windows 或整个产品原生验收。测试日志均在 `cmake-build-debug`。
 
 | 任务 | 对应差距与最小交付 | 完成标准 |
 | --- | --- | --- |
@@ -138,13 +140,13 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 
 本增量 Mac 构建与非 integration CTest **11/11 组通过**：导出 **12 passed**，UI **37 passed**，设置 **40 passed / 12 环境 skipped**；默认图片格式、编码后文件内容、原剪贴板失败保护、文件历史序列化、标注输出、窗口关闭后文件留存、OCR 文字选择、已有窗口设置更新及保存后复制已覆盖。原生设置开关/持久化及中英深浅、正常/紧凑布局 **7 passed**（`copy-file-native-settings-results.txt`），只用隔离数据和窗口自身截图。真实 Finder/Explorer 文件粘贴、退出后跨应用粘贴和 Windows 原生表现尚待验收，不将 MIME/离屏测试等同于系统文件粘贴。ST-101 保持部分完成；WebP/TIFF 等格式仍受实际 writer 缺失限制，下一项独立实现为 ST-102。
 
-独立界面审阅 `ship` 仅覆盖新增“复制为图像文件”设置行在上述四张截图中的呈现；无新增视觉系统或 material fixes。记录在 `.impeccable/review/file-copy-design-review.md`，不扩大为键盘焦点、跨应用粘贴或全产品通过。
+独立界面审阅 `ship` 仅覆盖新增“复制为图像文件”设置行在上述四张截图中的呈现；无新增视觉系统或 material fixes。记录在 `file-copy-design-review.md`，不扩大为键盘焦点、跨应用粘贴或全产品通过。
 
 2026-11-06 ST-102：已接通当前运行的关闭恢复与正常退出会话恢复。托盘“贴图操作”提供两个恢复入口，贴图右键“更多操作”可恢复关闭项；启动恢复默认关闭，可在通用偏好开启。关闭栈最多20张/256 MiB、至少保留最近一张；会话独立于截图历史，PNG先完整写入后原子提交索引。Qt Quit 事件先捕获未关闭窗口，再允许 Qt 关闭窗口；真实退出子进程验证了不会误存空会话。后台读取按当前剩余容量执行，重复恢复不重开已有窗口；缺图、索引损坏和上限导致恢复不全时保留原会话。旧屏幕缺失时窗口移到当前可用区域。关闭栈不跨运行，不保证崩溃/断电恢复；Windows 和真实多屏变更仍待验收。下一项独立实现为 ST-103。
 
 同轮按用户新要求精简贴图和菜单栏右键：贴图5个主入口、托盘6个主入口；低频动作移入分组，保留全部功能和快捷键。这是 ST-209 的菜单组织增量，不表示自定义按钮排列/快捷键映射已完成。
 
-最终验证：Mac Qt 6.12 构建、非 integration CTest **12/12 组通过**；贴图会话存储 **10 passed**、UI **40 passed**、设置 **57 passed / 12 环境 skipped**。原生关闭/重启恢复、真实 Qt Quit 子进程和双屏两个方向各15次布局恢复 **6 passed**（`pin-layout-final-results.txt`）。修复了原生首次显示回调覆盖恢复位置的问题，保留修复前失败日志 `pin-screen-before.txt` 和修复后结果；早期 `compact-menu-native-results.txt` 中的双屏失败不能当最终通过记录。菜单/设置的12个原生显示场景已通过，24张自身截图覆盖中英深浅、正常/紧凑设置、两类主菜单及其单层分组；独立审阅 `ship` 与文档记录在 `.impeccable/review/compact-menu-design-review.md`，只证明该界面的呈现与组织。屏幕移除的离屏约束也有回归，但不据此宣称热插拔、混合 DPI 截图或 Windows 实机已通过。
+最终验证：Mac Qt 6.12 构建、非 integration CTest **12/12 组通过**；贴图会话存储 **10 passed**、UI **40 passed**、设置 **57 passed / 12 环境 skipped**。原生关闭/重启恢复、真实 Qt Quit 子进程和双屏两个方向各15次布局恢复 **6 passed**（`pin-layout-final-results.txt`）。修复了原生首次显示回调覆盖恢复位置的问题，保留修复前失败日志 `pin-screen-before.txt` 和修复后结果；早期 `compact-menu-native-results.txt` 中的双屏失败不能当最终通过记录。菜单/设置的12个原生显示场景已通过，24张自身截图覆盖中英深浅、正常/紧凑设置、两类主菜单及其单层分组；独立审阅 `ship` 与文档记录在 `compact-menu-design-review.md`，只证明该界面的呈现与组织。屏幕移除的离屏约束也有回归，但不据此宣称热插拔、混合 DPI 截图或 Windows 实机已通过。
 
 2026-11-06 ST-103 首个增量：新增独立只读纯文本贴图，直接剪贴板与历史 text/rich/link 入口复用现有贴图动作；HTML 仅取纯文本。可选字、全选、复制、滚动长文、拖标题移动与右下角调整大小；双击选词，文字不走 OCR。复制按源文本 UTF-16 范围截取，保留 CRLF、制表、首尾空白、emoji、Unicode 分隔符及 NUL；单项上限 32 MiB UTF-8。图片继续优先，文件 URL 不误贴成路径。文字菜单仅复制、全选、更多、关闭，不新增托盘或历史主菜单行。
 
@@ -152,7 +154,7 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 
 本增量 Mac Qt 6.12 全量构建、非 integration CTest **12/12 组通过**：UI **43 passed**、设置 **63 passed / 12 环境 skipped**、贴图会话 **15 passed**、剪贴板派发 **16 passed**。覆盖原样复制与 Unicode 位置、字节上限、旧版迁移、混合关闭/重启恢复、直接剪贴板的图片优先和文件 URL 排除。原生混合会话、真实 Qt Quit、双屏恢复与文字窗口截图 **10 passed**（`text-pin-native-results.txt`）；修复深色关闭按钮和滚动条后，12张中英深浅/正常紧凑/滚动与菜单截图重新捕获，显示回归 **6 passed**（`text-pin-native-visual-results.txt`）。这些原生场景只使用隔离数据和合成内容，不代表 Windows、全部焦点/辅助功能或崩溃恢复已验收。
 
-独立界面复核将两项深色修正均评为 `resolved`，最终 `ship` 仅覆盖这两项；记录见 `.impeccable/review/text-pin-design-review.md`。沿用既有视觉系统，未借本轮修改 DESIGN 或修复已有平台元数据漂移。
+独立界面复核将两项深色修正均评为 `resolved`，最终 `ship` 仅覆盖这两项；记录见 `text-pin-design-review.md`。沿用既有视觉系统，未借本轮修改 DESIGN 或修复已有平台元数据漂移。
 
 2026-11-06 ST-103 第二增量：直接剪贴板与历史 `text/html` 自动进入只读富文本贴图，使用 Qt HTML 文字排版子集保留标题、粗斜体、列表、表格、预格式文本和内联 CSS 文字格式；原纯文本仍精确复制源范围。富文本复制选区或全文的可见纯文本，不携带 HTML、不误用原始后备文本；原始剪贴板与历史 MIME 保持。仍为4个主菜单动作，不新增托盘/历史根菜单行。
 
@@ -162,7 +164,7 @@ P0 只处理 P1 所必需的依赖、缺陷和回归，不再单独扩项；P2�
 
 本增量全量构建及非 integration CTest **12/12 组通过**（`cmake-build-debug/html-pin-ctest-results.txt`）：UI **46 passed**、设置 **67 passed / 12 环境 skipped**、会话 **19 passed**、剪贴板归档 **26 passed**、派发 **17 passed**。原生历史入口、关闭/重启恢复、真实退出和12张中英深浅/正常紧凑/选择/滚动/菜单截图 **8 passed**（`html-pin-native-results.txt`），只用隔离合成数据和窗口自身截图。Windows、全部辅助功能/焦点路径仍待验收；保留总目标，下一项独立开发为 ST-104。
 
-独立界面审阅 `ship`，无 material fixes，范围仅为本轮12张 macOS 原生界面截图；资源隔离依据单独的源码与功能回归，不由视觉结论代替。记录见 `.impeccable/review/html-pin-design-review.md`；保留既有视觉系统与平台元数据漂移。
+独立界面审阅 `ship`，无 material fixes，范围仅为本轮12张 macOS 原生界面截图；资源隔离依据单独的源码与功能回归，不由视觉结论代替。记录见 `html-pin-design-review.md`；保留既有视觉系统与平台元数据漂移。
 
 2026-11-06 ST-104：新增 V“选择标注”，按源图形轮廓及缩放后的逻辑像素容差从顶层命中，拖动整体移动，方向键按源像素微移、Shift 加速。选中对象复用颜色/线宽控件，文字与序号可 F2/双击修改，取消保留，清空则删除标签。画布 Delete/Backspace 删除选中对象；选择模式无选中时不误删，绘制模式保留原有撤销末项行为，在线宽输入框中 Delete 只编辑数字。Esc 先取消当前手势/选择，再次关闭编辑器；换工具取消未提交预览。不新增右键菜单项，保留11个绘制工具与既有快捷键。
 
@@ -174,7 +176,7 @@ ImageDocument 使用当前对象列表和单次新增/替换/删除的 before/af
 
 原生 F2/文字弹窗后焦点首轮因锁屏未验收：初始失败发生在弹窗前，记录显示测试应用未激活；CUA 原生入口明确报告 Mac 已锁屏且无法自动解锁。用例在原生应用不处于前台时明确跳过，前台条件满足后的修改/取消/焦点断言保留。生产焦点行为未为测试强制改写；早期 `annotation-native-results.txt`、`annotation-native-focus-*.txt` 不能当通过记录。随后用户确认解锁，原生 `annotationTextEditKeepsTheEditorUsable` 补验 **3 passed / 0 skipped**（`annotation-unlocked-focus-results.txt`），通过 F2 修改、取消弹窗、返回画布焦点及继续绘制。Windows、完整辅助功能仍待验收。下一项独立实现为 ST-105。
 
-独立界面复核确认线宽读数问题 `resolved`，最终 `ship` 仅覆盖这项修复，记录见 `.impeccable/review/annotation-edit-design-review.md`。原生焦点前置条件现在等待窗口激活再决定跳过，`annotation-focus-desktop-precondition.txt` 为 **2 passed / 1 skipped**，没有将锁屏状态计成功能通过。
+独立界面复核确认线宽读数问题 `resolved`，最终 `ship` 仅覆盖这项修复，记录见 `annotation-edit-design-review.md`。原生焦点前置条件现在等待窗口激活再决定跳过，`annotation-focus-desktop-precondition.txt` 为 **2 passed / 1 skipped**，没有将锁屏状态计成功能通过。
 
 2026-11-06 ST-105 首个增量：编辑器按 C 进入裁切，拖选保留区域，Enter、再次按 C 或主按钮确认；Esc／切工具取消预览。裁切按钮下拉只有水平／垂直翻转，保持图片贴图5、文字贴图4、托盘6个主入口，不新增右键菜单项。空区域或全幅裁切不产生历史，不清除 redo；有效裁切／翻转与标注修改共用一条撤销／重做记录。
 
@@ -184,7 +186,7 @@ ImageDocument 保留不可变原图、当前裁切区域／镜像方向及每个
 
 本增量 Mac Qt 6.12 全量构建及最终非 integration CTest **12/12 组通过**（`cmake-build-debug/image-transform-ctest-final-results.txt`，35.76秒）：核心 **45 passed**、UI **64 passed**、设置 **78 passed / 12 环境 skipped**。覆盖11种标注／透明像素的逐像素裁切与镜像、变换后旧对象修改及新文字方向、撤销分支、预览取消、输出与异步 OCR 失效。首轮唯一失败为回归数据误用 Qt 负尺寸 QRect 的端点语义，已修正测试构造，未改生产裁切规则；保留 `image-crop-fixture-before.txt` 及首轮 CTest 日志，不将它们计为通过。
 
-原生合成图像变换与12张中英深浅／正常紧凑窗口、工具栏和两行下拉菜单截图 **7 passed**（`image-transform-native-final-results.txt`），仅用隔离合成数据与窗口自身截图。界面复核发现线宽框禁用时仍显示成可编辑外观，已复用当前深浅主题的禁用文字颜色修正；之后全量构建通过、相关 UI／设置 CTest **2/2** 复验通过（`image-transform-disabled-final-results.txt`），重新捕获上述12张截图。独立终审确认禁用态问题 resolved、UI disposition 为 `ship`，记录见 `.impeccable/review/image-transform-design-review.md`，不扩大为全产品验收。
+原生合成图像变换与12张中英深浅／正常紧凑窗口、工具栏和两行下拉菜单截图 **7 passed**（`image-transform-native-final-results.txt`），仅用隔离合成数据与窗口自身截图。界面复核发现线宽框禁用时仍显示成可编辑外观，已复用当前深浅主题的禁用文字颜色修正；之后全量构建通过、相关 UI／设置 CTest **2/2** 复验通过（`image-transform-disabled-final-results.txt`），重新捕获上述12张截图。独立终审确认禁用态问题 resolved、UI disposition 为 `ship`，记录见 `image-transform-design-review.md`，不扩大为全产品验收。
 
 用户解锁后新增独立原生键盘回归 `imageTransformsKeepNativeKeyboardUsable`，通过 C 进入、Enter／再次 C 确认、翻转后继续裁切、平台撤销重做、Esc 取消预览及再次 Esc 关闭；原图与对象保留。`image-transform-unlocked-keyboard-results.txt` 为 **3 passed / 1 skipped**：裁切键盘用例实际通过，该批 F2 因首窗未处于前台而跳过，不能计作 F2 再次通过；F2 的独立解锁通过证据为上文 `annotation-unlocked-focus-results.txt`。新增用例离屏 **3 passed**（`image-transform-keyboard-offscreen-results.txt`），测试目标重编通过；未因只新增用例重复执行无关测试。Windows、完整键盘／辅助功能及大图性能仍待验收。总目标保持进行中，下一增量为 ST-105 灰度／反色。
 
@@ -194,7 +196,7 @@ ImageDocument 的标注创建上下文保留画幅和单调创建顺序；效果
 
 本增量 Mac Qt 6.12 全量构建通过（`color-effect-build.txt`）。非 integration CTest 首轮 **11/12 组通过**（`color-effect-ctest-results.txt`），唯一失败是新增菜单测试假设 End 键可选末项；没有生产图像处理失败。测试改用方向键逐项导航、跳过分隔线并 Enter 执行，重编设置目标后该组 **1/1 复验通过**（`color-effect-settings-final-results.txt`），其余11组源码未变，沿用首轮通过证据。最终分项为核心 **49 passed**、UI **69 passed**、设置 **85 passed / 12 环境 skipped**。保留首轮菜单失败 `color-effect-menu-keyboard-before.txt`，不把失败记录作为通过。
 
-原生合成图像处理、旧标注修改／新彩色标注、菜单方向键／Enter 及12张中英深浅／正常紧凑截图 **8 passed / 0 skipped**（`color-effect-native-results.txt`）。截图位于 `.impeccable/review/qml-color-effect-{grayscale,invert,menu}-*.png`，仅用隔离合成内容与窗口自身截图。独立界面审阅 `ship`、无 material fixes，记录在 `.impeccable/review/color-effect-design-review.md`；仅覆盖本轮 UI，不替代功能或跨平台验收。核心还覆盖硬编码 RGBA、11 类工具、裁切／双翻转作者画幅、多效果混合、旧对象预览／修改／删除恢复及撤销分支；界面覆盖输出、未提交预览取消与阻塞 OCR 旧结果不回写。Windows、完整辅助功能和大图性能仍待验收；PNG/JPEG、历史和贴图会话仍只保存扁平结果。F23 的亮度尚未实现，下一独立增量继续补齐；总目标保持进行中。
+原生合成图像处理、旧标注修改／新彩色标注、菜单方向键／Enter 及12张中英深浅／正常紧凑截图 **8 passed / 0 skipped**（`color-effect-native-results.txt`）。截图位于 `qml-color-effect-{grayscale,invert,menu}-*.png`，仅用隔离合成内容与窗口自身截图。独立界面审阅 `ship`、无 material fixes，记录在 `color-effect-design-review.md`；仅覆盖本轮 UI，不替代功能或跨平台验收。核心还覆盖硬编码 RGBA、11 类工具、裁切／双翻转作者画幅、多效果混合、旧对象预览／修改／删除恢复及撤销分支；界面覆盖输出、未提交预览取消与阻塞 OCR 旧结果不回写。Windows、完整辅助功能和大图性能仍待验收；PNG/JPEG、历史和贴图会话仍只保存扁平结果。F23 的亮度尚未实现，下一独立增量继续补齐；总目标保持进行中。
 
 2026-11-06 ST-105 第三增量：同一下拉菜单新增“调整亮度…”，不增加右键菜单或快捷键。弹窗支持 -100 至 100 的实时预览，负值变暗、正值变亮。效果按 `qRound(amount * 255 / 100.0)` 对 RGB 作饱和偏移，保留 alpha，与原有颜色处理共用创建顺序和源图区域。旧标注仍可编辑并经过原有后续效果，新标注使用所选颜色。
 
@@ -202,9 +204,9 @@ ImageDocument::previewBrightness 每次从已提交合成结果生成预览，�
 
 本增量 Mac Qt 6.12 全量构建及非 integration CTest **12/12 组通过**（`brightness-build.txt`、`brightness-ctest-results.txt`，42.31秒）：核心 **51 passed**、UI **72 passed**、设置 **91 passed / 12 环境 skipped**。覆盖硬编码正负／极值／零值 RGBA、饱和截断、预览不改历史且等于提交结果、组合裁切／翻转／颜色效果、旧对象修改／删除恢复、新标注本色、输出、取消与零值保 redo，以及预览／零值不取消 OCR、真正提交阻止旧结果回写。
 
-原生截图发现 Cocoa 深色弹窗的取消文字与步进箭头难辨，已将样式限制在亮度弹窗及其子控件内，使用 Fusion 遵循应用调色板；样式对象由弹窗持有，未改全局样式。修复后应用与相关测试目标重编通过（`brightness-dialog-final-build.txt`），UI／设置 CTest **2/2 复验通过**（`brightness-dialog-ctest-final-results.txt`，25.75秒），最终原生预览／提交、取消／零值、返回焦点／画布快捷键及12张中英深浅／正常紧凑截图 **8 passed / 0 skipped**（`brightness-native-final-results.txt`）。截图为 `.impeccable/review/qml-brightness-{dialog,preview,applied}-*.png`，两张 `dialog-before-*` 保留修复前对比；只使用隔离合成数据与窗口自身截图，不读取桌面或真实剪贴板。
+原生截图发现 Cocoa 深色弹窗的取消文字与步进箭头难辨，已将样式限制在亮度弹窗及其子控件内，使用 Fusion 遵循应用调色板；样式对象由弹窗持有，未改全局样式。修复后应用与相关测试目标重编通过（`brightness-dialog-final-build.txt`），UI／设置 CTest **2/2 复验通过**（`brightness-dialog-ctest-final-results.txt`，25.75秒），最终原生预览／提交、取消／零值、返回焦点／画布快捷键及12张中英深浅／正常紧凑截图 **8 passed / 0 skipped**（`brightness-native-final-results.txt`）。截图为 `qml-brightness-{dialog,preview,applied}-*.png`，两张 `dialog-before-*` 保留修复前对比；只使用隔离合成数据与窗口自身截图，不读取桌面或真实剪贴板。
 
-独立界面终审确认深色弹窗可见性问题 resolved，最终 `ship` 仅覆盖本轮 UI，记录见 `.impeccable/review/brightness-design-review.md`；不以视觉结论代替功能或跨平台证据。ST-105 列出的裁切、翻转、灰度、反色和亮度已实现并完成以上 Mac 范围回归；Windows、完整辅助功能与大图实时预览性能仍待验收，不将当前结果扩大为完整跨平台验收。下一独立增量推进 ST-106；总目标保持进行中。
+独立界面终审确认深色弹窗可见性问题 resolved，最终 `ship` 仅覆盖本轮 UI，记录见 `brightness-design-review.md`；不以视觉结论代替功能或跨平台证据。ST-105 列出的裁切、翻转、灰度、反色和亮度已实现并完成以上 Mac 范围回归；Windows、完整辅助功能与大图实时预览性能仍待验收，不将当前结果扩大为完整跨平台验收。下一独立增量推进 ST-106；总目标保持进行中。
 
 2026-11-06 ST-106 首个增量：托盘“更多操作 → 延时截图…”提供 1–60 秒、默认5秒的非模态倒计时，保留6个托盘主入口。开始等待后可切换到目标应用，截止时才调用原截图流程，检查权限、隐藏窗口并逐屏冻结后框选，继续沿用当前选区完成动作。取消按钮、窗口关闭与该窗口的 Esc 均同步停止计时，不产生后续截图；重复打开只激活原窗口，普通截图取消等待并立即接管。
 
@@ -216,7 +218,7 @@ ImageDocument::previewBrightness 每次从已提交合成结果生成预览，�
 
 原生合成帧流程、销毁清理与最终12张中英深浅／正常紧凑输入、倒计时和菜单截图 **8 passed / 0 skipped**（`delay-capture-native-final-results.txt`）；独立倒计时原生测试 **9 passed / 0 skipped**（`delay-timer-native-final-results.txt`）。另注册独立串行 integration `still_mac_delay`，通过受控的第二测试进程与 AppKit 协作激活完成实际应用切换，断言目标进程激活、本进程失活后原生与 Qt 倒计时窗口均保持可见；CTest **1/1 通过**（`delay-cooperative-ctest-results.txt`，8.51秒），QTest **4 passed / 0 skipped**（`mac-delay-results.txt`）。辅助进程仅展示合成窗口，结束时清理；旧直接调用 deactivate 的失败批次只保留作诊断，未计为通过，也未将原因确定归于第二次创建 Application。
 
-独立界面终审确认取消入口隐藏问题 resolved，最终 `ship` 仅覆盖本轮延时截图 UI，记录见 `.impeccable/review/delay-capture-design-review.md`；全部12张最终截图为 `.impeccable/review/qml-delay-capture-{input,countdown,menu}-*.png`。上述证据证明倒计时交接和受控跨进程失活时取消入口可用，不代表真实桌面／跨应用展开菜单的像素捕获、截图首次／拒绝／重新授权、Windows 或完整辅助功能已验收。ST-106 保持部分完成，上次区域、数字宽高与固定比例仍待实现；P0 原生待验收项继续保留，总目标保持进行中。
+独立界面终审确认取消入口隐藏问题 resolved，最终 `ship` 仅覆盖本轮延时截图 UI，记录见 `delay-capture-design-review.md`；全部12张最终截图为 `qml-delay-capture-{input,countdown,menu}-*.png`。上述证据证明倒计时交接和受控跨进程失活时取消入口可用，不代表真实桌面／跨应用展开菜单的像素捕获、截图首次／拒绝／重新授权、Windows 或完整辅助功能已验收。ST-106 保持部分完成，上次区域、数字宽高与固定比例仍待实现；P0 原生待验收项继续保留，总目标保持进行中。
 
 2026-11-06 ST-106 第二增量：托盘“更多操作 → 重复上次区域”在首次确认选区后启用，重新冻结同一源屏区域的新画面并沿用当前“选区完成后”动作；未新增根菜单项，托盘主入口仍为6项，更多分组现为6行动作。普通截图仍从空选区开始，取消、整屏截图与打开历史不覆盖已确认区域；重复截图会取消等待中的延时。首轮只保留当前运行的最后确认区域，不提供跨重启记录、固定区域或历史预设。
 
@@ -228,7 +230,7 @@ Mac Qt 6.12 应用与相关测试目标构建通过（`repeat-region-build.txt`�
 
 早期设置失败记录 `repeat-region-settings-first-results.txt` 中，四个提示场景的标题断言不符合 [Qt 的 macOS 消息框契约](https://doc.qt.io/qt-6/qmessagebox.html#setWindowTitle)，已校正平台断言，正文与重选流程断言保留；另两项旧用例失败在后续两次整组运行均未再出现，未坐实其原因、未据此修改生产行为。原生截图首轮因 Qt 定时器驱动无法关闭 NSAlert 而停驻，保留 `repeat-region-native-message-driver-before.txt` 与调用栈 `repeat-region-native-sample.txt` 为诊断，未计为通过。后续仅为测试增加有时限的原生模态驱动，没有将生产消息框换成 Qt 窗口以绕过验证。
 
-独立界面终审逐张复核最终12张截图，结论 `ship`、无 material fixes，仅覆盖本轮区域复用 UI；记录见 `.impeccable/review/repeat-region-design-review.md`，截图为 `qml-repeat-capture-{menu-disabled,menu-enabled,unavailable}-*.png`。未打包测试进程的系统文件夹图标不作为产品 bundle 图标结论；打包后原生提示、真实热插拔／混合 DPI 桌面、跨应用展开菜单像素、权限流程、Windows 与完整辅助功能仍待验收。ST-106 保持部分完成，下一独立增量为数字宽高，再补固定比例；总目标保持进行中。
+独立界面终审逐张复核最终12张截图，结论 `ship`、无 material fixes，仅覆盖本轮区域复用 UI；记录见 `repeat-region-design-review.md`，截图为 `qml-repeat-capture-{menu-disabled,menu-enabled,unavailable}-*.png`。未打包测试进程的系统文件夹图标不作为产品 bundle 图标结论；打包后原生提示、真实热插拔／混合 DPI 桌面、跨应用展开菜单像素、权限流程、Windows 与完整辅助功能仍待验收。ST-106 保持部分完成，下一独立增量为数字宽高，再补固定比例；总目标保持进行中。
 
 2026-11-06 ST-106 第三增量：框选工具条提供宽、高两个数字框，单位为最终图像像素，范围1到当前冻结帧整幅；修改一维保留另一维，碰到右侧／下侧只平移选区以保留输入尺寸。鼠标、八手柄和键盘调整同步读数，输入框 Enter 只提交数值，点击输出按钮会先提交尚未失焦的输入；回到选区 Enter 完成，Esc 取消。快速复制／长截图默认仍松手即完成，按住 Shift 松手可进入精调，之后移动／改已有选区不会提前输出。工具条仅增加尺寸行，原8操作、32px按钮／20px图标及长截图42px操作条保持；托盘主入口未增加。
 
@@ -240,9 +242,9 @@ Mac Qt 6.12 应用与相关测试目标构建通过（`repeat-region-build.txt`�
 
 应用／UI／设置目标最终重编通过（`capture-dimensions-polished-build.txt`），核心目标构建见 `capture-dimensions-core-final-build.txt`。最终相关 CTest **3/3 通过**（`capture-dimensions-polished-ctest-results.txt`，43.26秒）：核心 **60 passed**、UI **87 passed**、设置 **108 passed / 14 环境 skipped**，逐组日志为 `capture-dimensions-{core,ui,settings}-polished-results.txt`。英文文案与占位符检查 **394 source strings / 421 catalog entries** 通过（`capture-dimensions-translation-results.txt`）。
 
-最终 Mac Qt 6.12 原生输入／焦点、4组中英深浅及正常／紧凑截图、两块屏幕实际 DPR 1／2 的箭头绘制、区域重复与长截图工具条 **12 passed / 0 skipped**（`capture-dimensions-polished-native-results.txt`，12.431秒）。测试仅使用隔离合成帧及窗口自身内容；原生前台条件通过普通打开剪贴板入口建立，未增加生产激活逻辑。最终16张截图为 `.impeccable/review/qml-capture-dimensions-{ready,selection,focused,fullframe}-*.png`，4张 `before-*` 保留修复前对照。
+最终 Mac Qt 6.12 原生输入／焦点、4组中英深浅及正常／紧凑截图、两块屏幕实际 DPR 1／2 的箭头绘制、区域重复与长截图工具条 **12 passed / 0 skipped**（`capture-dimensions-polished-native-results.txt`，12.431秒）。测试仅使用隔离合成帧及窗口自身内容；原生前台条件通过普通打开剪贴板入口建立，未增加生产激活逻辑。最终16张截图为 `qml-capture-dimensions-{ready,selection,focused,fullframe}-*.png`，4张 `before-*` 保留修复前对照。
 
-独立界面终审逐张复核最终16张截图及4张修复前对照，结论 `ship`，两项 material 问题均 resolved，无待修项，仅覆盖本轮宽高输入 UI；记录见 `.impeccable/review/capture-dimensions-design-review.md`。上述真实屏幕 DPR 校准只验证 Widgets 绘制，不代表真实桌面混合 DPI 像素捕获；Windows、真实热插拔、截图权限、打包应用与完整辅助功能仍待验收。ST-106 保持部分完成，下一独立增量为固定比例；P0 未验收项和总目标继续保持进行中。
+独立界面终审逐张复核最终16张截图及4张修复前对照，结论 `ship`，两项 material 问题均 resolved，无待修项，仅覆盖本轮宽高输入 UI；记录见 `capture-dimensions-design-review.md`。上述真实屏幕 DPR 校准只验证 Widgets 绘制，不代表真实桌面混合 DPI 像素捕获；Windows、真实热插拔、截图权限、打包应用与完整辅助功能仍待验收。ST-106 保持部分完成，下一独立增量为固定比例；P0 未验收项和总目标继续保持进行中。
 
 2026-11-06 ST-106 第四增量：宽高旁增加比例选择，默认“自由比例”，提供1:1、4:3、16:9、3:4、9:16；仅提供当前帧可容纳最小整数单位的选项。比例属于当前 Overlay，不增加持久配置、预设管理或托盘主入口。切比例按当前宽度调整；固定比例下宽高按共同整数倍率就近对齐，范围与步进同步，受整幅上限约束。切回自由保留当前选区，恢复1px步长与全幅范围。快速复制／长截图仍可按住 Shift 松手精调，已有选区调整不会提前输出。
 
@@ -256,7 +258,7 @@ Mac 本机的比例菜单实际走标准 QComboBox 的 Qt 弹层，日志明确 
 
 应用、核心及UI／设置目标最终重编通过（`capture-ratio-popup-final-build.txt`）；最终相关 CTest **3/3 通过**（`capture-ratio-ctest-final-results.txt`，42.57秒）：核心 **60 passed**、UI **125 passed**、设置 **113 passed / 14 环境 skipped**，逐组日志为 `capture-ratio-{core,ui,settings}-final-results.txt`。文案与占位符检查 **397 source strings / 424 catalog entries** 通过（`capture-ratio-translation-results.txt`）。最终 Mac Qt 6.12 原生 **13 passed / 0 skipped**（`capture-ratio-native-final-results.txt`，8.570秒），覆盖比例与宽高输入、四组截图／真实 Qt 下拉、实际两屏 DPR1／2 的箭头、401输入对齐400×225后按新帧重复区域、长截图操作行。
 
-最终12张截图为 `.impeccable/review/qml-capture-ratio-{selection,focused,dropdown}-*.png`；两张 `before-*` 保留深色箭头对照，四张 `dropdown-before-*` 保留首项截断对照。独立界面终审逐张复核最终12图及6张对照，结论 `ship`，两项 material 问题均 resolved，无待修项，仅覆盖本轮比例工具条／实际 Qt 弹层；记录见 `.impeccable/review/capture-ratio-design-review.md`。全部图像输入为隔离合成帧，抓图限于自身窗口，DPR校准只证明 Widgets 绘制；Windows、真实混合DPI桌面捕获／热插拔、权限、打包与完整辅助功能仍待验收。ST-106 的数字宽高与固定比例范围已交付，F03固定区域／历史预设仍未实现，下一独立增量继续补区域预设；总目标保持进行中。
+最终12张截图为 `qml-capture-ratio-{selection,focused,dropdown}-*.png`；两张 `before-*` 保留深色箭头对照，四张 `dropdown-before-*` 保留首项截断对照。独立界面终审逐张复核最终12图及6张对照，结论 `ship`，两项 material 问题均 resolved，无待修项，仅覆盖本轮比例工具条／实际 Qt 弹层；记录见 `capture-ratio-design-review.md`。全部图像输入为隔离合成帧，抓图限于自身窗口，DPR校准只证明 Widgets 绘制；Windows、真实混合DPI桌面捕获／热插拔、权限、打包与完整辅助功能仍待验收。ST-106 的数字宽高与固定比例范围已交付，F03固定区域／历史预设仍未实现，下一独立增量继续补区域预设；总目标保持进行中。
 
 2026-11-06 ST-106 第五增量：托盘“更多操作 → 区域预设…”提供非模态工具窗口，为上次确认区域命名保存、选择截取及删除确认。支持跨 App 重启复用，保存时名称去首尾空白、最多80个UTF-16单元，区分大小写且同名拒绝覆盖。名称 Enter 保存，列表 Enter／小键盘 Enter／双击截取，焦点按钮 Enter 执行对应动作；空列表 Enter 不会误保存输入。托盘仍6个主入口，更多分组由6变7项，不增加预设子菜单。截取前管理窗口先隐藏，避免输出时被抬回前方。
 
@@ -270,7 +272,7 @@ Mac 本机的比例菜单实际走标准 QComboBox 的 Qt 弹层，日志明确 
 
 本机 Mac Qt 6.12 原生 **13 passed / 0 skipped**（`region-presets-native-first-results.txt`，17.959秒，含初始化／清理）。覆盖实际可识别屏幕的Overlay确认、201×127像素精确区域保存、新帧调用、Repeat、App重建后恢复、当前贴图动作、320上限、设置及双目录迁移不改预设、延时接管与迟到防重；缺屏／越界提示、取消后旧Repeat保留和旧长截图操作行均通过。离屏环境没有持久屏幕身份，正向跨重启匹配和越界两个集成场景明确跳过，已由上述原生结果补验；不将跳过当完成。
 
-最终13张自身窗口截图为 `.impeccable/review/qml-region-presets-{empty,saved,error}-*.png` 12张与 `qml-region-presets-menu-normal-light-zh.png`。面板使用既有局部Fusion模式和MacAlwaysShowToolWindow，中英深浅、正常560×420／紧凑440×340逻辑尺寸均覆盖；实际PNG为2倍像素。独立界面终审逐张检查全部13图，结论 `ship`、无 material fixes，仅覆盖本轮管理窗口及所提供More菜单；记录见 `.impeccable/review/region-presets-design-review.md`。用户名称“复制”在英文界面保持中文是保留用户内容，错误原因与路径完整换行；根菜单6项另由源码／测试证明。
+最终13张自身窗口截图为 `qml-region-presets-{empty,saved,error}-*.png` 12张与 `qml-region-presets-menu-normal-light-zh.png`。面板使用既有局部Fusion模式和MacAlwaysShowToolWindow，中英深浅、正常560×420／紧凑440×340逻辑尺寸均覆盖；实际PNG为2倍像素。独立界面终审逐张检查全部13图，结论 `ship`、无 material fixes，仅覆盖本轮管理窗口及所提供More菜单；记录见 `region-presets-design-review.md`。用户名称“复制”在英文界面保持中文是保留用户内容，错误原因与路径完整换行；根菜单6项另由源码／测试证明。
 
 本轮以用户命名的跨运行预设完成“历史选区/预设复用”的预设支路，不宣称自动收集全部最近选区或提供独立历史列表。ST-106列出的本阶段最小功能已实现并完成以上Mac范围回归；Windows、真实桌面／混合DPI像素捕获、热插拔、权限、打包和完整辅助功能继续待验收，不能标记整项跨平台验收完成。全部图像输入为隔离合成帧，原生截图限自身窗口；屏幕身份与失效场景的测试不等于真实热插拔。下一独立增量按顺序推进 ST-107，保留P0待验收项，总目标继续进行中。
 
@@ -284,7 +286,7 @@ Mac 本机的比例菜单实际走标准 QComboBox 的 Qt 弹层，日志明确 
 
 首次整组执行停在无系统托盘时的真实 `QMessageBox::warning`，原因是新增错误场景缺少测试关闭驱动；已只在无托盘环境用有界定时器匹配实际正文后关闭并断言，不改生产提示。原始中断记录为 `ocr-result-ctest-driver-before-results.txt`，不计通过；修正后上述最终整组通过。本机 Mac Qt 6.12 原生入口与四组中英深浅／正常紧凑交互 **9 passed / 0 skipped**（`ocr-result-native-final-results.txt`，4.112秒，含init／cleanup），只用隔离合成文字与自身窗口；通过真实Overlay完成OCR动作、实际键入／焦点、编辑／原文复制、显式整理、独立第二结果和关闭。此处 OCR 引擎由测试边界返回固定结果，不据此宣称真实识别质量已重新验收。
 
-最终12张原生自身窗口截图为 `.impeccable/review/qml-ocr-result-{editable,original,formatted}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，正常680×520／紧凑520×420逻辑尺寸，本机PNG为2倍像素。格式化后长行不自动折行，水平滚动条保留完整内容；截图的视口随末尾光标横向滚动不表示丢字。界面沿用现有局部Fusion样式和Mac工具窗口约定。独立界面终审逐张复核全部12图，结论 `ship`、无 material fixes，仅覆盖所提供本轮UI；没有before图，不宣称视觉改善幅度，记录见 `.impeccable/review/ocr-result-design-review.md`。
+最终12张原生自身窗口截图为 `qml-ocr-result-{editable,original,formatted}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，正常680×520／紧凑520×420逻辑尺寸，本机PNG为2倍像素。格式化后长行不自动折行，水平滚动条保留完整内容；截图的视口随末尾光标横向滚动不表示丢字。界面沿用现有局部Fusion样式和Mac工具窗口约定。独立界面终审逐张复核全部12图，结论 `ship`、无 material fixes，仅覆盖所提供本轮UI；没有before图，不宣称视觉改善幅度，记录见 `ocr-result-design-review.md`。
 
 跨窗口拖出保留单独显式门控 `ocrResultDragHandoff`（`STILL_OCR_DRAG_HANDOFF=1` 且 Cocoa，普通CTest明确跳过），等待实际鼠标拖到独立接收窗口并验证 Copy／Move、撤销与原文。无bundle CLI进程不能被当前CUA工具绑定；临时测试bundle可操作源窗口，但拖到独立接收窗口时工具返回 `windowNotFoundAtPosition((859.0, 284.0))`，只读系统状态未显示锁屏。两次等待进程已按实际PID终止，日志 `ocr-result-drag-unbundled-results.txt` 与 `ocr-result-drag-native-results.txt` 只有就绪前置条件，不计拖出通过，也不据此修改生产拖动。ST-107保持部分完成，跨窗口／跨应用拖出、Windows和完整辅助功能仍待实测；保留该验收项，下一独立增量推进 ST-108，总目标继续进行中。
 
@@ -302,7 +304,7 @@ Mac 本机的比例菜单实际走标准 QComboBox 的 Qt 弹层，日志明确 
 
 保留验证过程中的失败证据：最早离屏导出解析失败未单独坐实原因，未据此改生产；后续原生 `selectFile` 选中路径不符 **2 passed / 5 failed**（`settings-backup-native-chooser-before-results.txt`），与 [Qt 6.12 可见文件名输入框有焦点时保留当前输入的实现](https://github.com/qt/qtbase/blob/v6.12.0/src/widgets/dialogs/qfiledialog.cpp#L1015-L1045) 一致。驱动现分阶段确认 Qt 输入框、实际键入、等待精确路径与按钮启用、实际点击，并在接受后复核路径。旧四行矩阵单独可复现 QtQuickLayout 崩溃而单行通过，见 `settings-backup-snapshots-repro-results.txt`；测试在状态切换间处理事件／deferred delete并完成实际 frame polish，仍保留 General 页真实外观导入场景，未增加生产布局／激活补丁。新键盘验证在离屏文件面板关闭后曾因父窗口未激活出现四行焦点失败（`settings-backup-focus-before-results.txt`）；只在测试补标准窗口激活及断言，最终离屏和原生同样通过，不跳过焦点断言。
 
-独立界面终审逐张检查首批16图，唯一 material 为可用未选目录复选框边界过淡。修复前像素回归 **2 passed / 2 failed**（`settings-backup-indicator-before-results.txt`），浅／深边缘对比分别约1.65／1.05；只给本窗口 enabled+unchecked 指示框增加主题中性边界，保留原生 checked／disabled／focus。最终两主题四边至少3:1的断言通过。复拍初始／预览8图并增加选中4图后，同一审阅者逐张核对12张相关图，唯一问题评分 `resolved`，`ship` 只覆盖该修复与原本轮UI范围。最终共20张 `.impeccable/review/qml-settings-backup-{entry,initial,preview,confirmation,directories}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，8张 `before-{initial,preview}` 保留对照；入口1100×760／800×620、窗口700×580／560×500逻辑尺寸，PNG为2倍像素。记录见 `.impeccable/review/settings-backup-design-review.md`。
+独立界面终审逐张检查首批16图，唯一 material 为可用未选目录复选框边界过淡。修复前像素回归 **2 passed / 2 failed**（`settings-backup-indicator-before-results.txt`），浅／深边缘对比分别约1.65／1.05；只给本窗口 enabled+unchecked 指示框增加主题中性边界，保留原生 checked／disabled／focus。最终两主题四边至少3:1的断言通过。复拍初始／预览8图并增加选中4图后，同一审阅者逐张核对12张相关图，唯一问题评分 `resolved`，`ship` 只覆盖该修复与原本轮UI范围。最终共20张 `qml-settings-backup-{entry,initial,preview,confirmation,directories}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，8张 `before-{initial,preview}` 保留对照；入口1100×760／800×620、窗口700×580／560×500逻辑尺寸，PNG为2倍像素。记录见 `settings-backup-design-review.md`。
 
 ST-108 本增量交付本地备份、严格导入和全部默认，不宣称已提供单项默认。下一独立增量继续补单项恢复默认；Windows、真实系统文件／确认面板、完整辅助功能及既有 P0 待验收项保持，总目标继续进行中。
 
@@ -318,7 +320,7 @@ ST-108 本增量交付本地备份、严格导入和全部默认，不宣称已�
 
 保留测试驱动的失败记录：`single-default-input-after-results.txt`／`single-default-native-first-results.txt` 暴露首次布局未完成就计算滚动、相同鼠标位置跨窗口未建立新悬停及剪贴板界面快照晚于设置完成的问题；补实际 frame polish、移出再进入、真实窗口激活与异步目录等待后，离屏功能 **8 passed / 0 skipped**（`single-default-input-synced-results.txt`）。原生 Tab 初次受系统只导航文本的规则影响，见 `single-default-native-tab-before-results.txt`。后续两行英文截图仍失败，抓图实际回退到中文浅色：测试只临时改外观，文本保存又应用真实旧配置，导致重建与失焦；`single-default-native-{space,appearance}-before-results.txt` 不计通过。最终截图改由真实设置流程保存语言／主题，先等待目标值与实际界面一致，结束也正常恢复；未追加生产布局、激活或外观补丁。
 
-最终12张图为 `.impeccable/review/qml-single-default-{hover,focused,confirmation}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`。自身窗口逻辑尺寸1100×760／800×620，PNG为DPR2；确认框按内容自适应。根代理和独立终审均逐张查看，终审 `ship`、无 material fixes，仅覆盖本轮提供的UI，记录见 `.impeccable/review/single-default-design-review.md`；不扩大为跨平台或完整辅助功能验收。当前表单单项默认的最小增量已交付，Windows、真实系统面板及既有未验收项继续保留。按最新目标只继续P1，下一独立增量为 ST-109，P2／P3不自动开发。
+最终12张图为 `qml-single-default-{hover,focused,confirmation}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`。自身窗口逻辑尺寸1100×760／800×620，PNG为DPR2；确认框按内容自适应。根代理和独立终审均逐张查看，终审 `ship`、无 material fixes，仅覆盖本轮提供的UI，记录见 `single-default-design-review.md`；不扩大为跨平台或完整辅助功能验收。当前表单单项默认的最小增量已交付，Windows、真实系统面板及既有未验收项继续保留。按最新目标只继续P1，下一独立增量为 ST-109，P2／P3不自动开发。
 
 2026-11-07 ST-109 首增量：通用偏好顶部新增“登录后启动”，当前接入 macOS 13+ 的 `SMAppService.mainAppService`。查询和启动应用本身不登记；仅用户操作才启停。开关只在真实 Enabled 时开启，RequiresApproval 显示尚未允许且保持关闭，提供系统登录项和取消登记；NotFound 可以尝试重新登记或取消。显示／激活／回到General时重读，不轮询，不以旧JSON字段推断状态。系统本机登记不进入普通偏好、草稿或版本1备份，导入和恢复默认不自动触碰登录项；其他平台目前由明确Unavailable的stub禁用入口，不假称Windows已接通。接口语义以 [Apple SMAppService](https://developer.apple.com/documentation/servicemanagement/smappservice?language=objc) 及本地SDK为依据。
 
@@ -328,7 +330,7 @@ Mac真实鼠标、另一窗口激活后刷新、失败不假开、NotFound重试
 
 打包同时补齐：先前Still仅有linker ad-hoc签名，Info.plist未绑定、资源未seal。非Xcode开发构建现链接后完整ad-hoc签名，图标与生成Info.plist进入LINK_DEPENDS，防止仅资源更新时跳过重签；Xcode仍使用原签名流程。Still和独立测试包均通过 `codesign --verify --strict`。隔离测试包仅修改生成plist的空白后，严格签名检查如期失败（`startup-resource-before-results.txt`）；正常构建重新链接并签名后通过（`startup-resource-rebuild-results.txt`／`startup-resource-after-results.txt`），再还原原plist字节并重签核对。未改动用户原图标文件；开发ad-hoc不等同正式分发签名、公证或最终安装包验收。
 
-界面最终8图为 `.impeccable/review/qml-startup-{disabled,approval}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，1100×760／800×620逻辑尺寸、DPR2；根代理与独立终审逐张查看，`ship`、无material fixes，仅覆盖本轮UI，记录见 `.impeccable/review/startup-design-review.md`。用户反馈原生测试造成大量exec Dock临时项后，检查确认测试进程已退出且无新增Dock固定项，仅刷新当前用户Dock；登录项API测试已去掉GUI初始化，后续必要界面验收合并串行，不再反复启动裸GUI程序。Windows、真实系统撤销批准、移动应用、重新登录、正式分发及完整辅助功能继续待补；本项保持部分完成，下一增量继续 ST-109，不进入P2／P3。
+界面最终8图为 `qml-startup-{disabled,approval}-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，1100×760／800×620逻辑尺寸、DPR2；根代理与独立终审逐张查看，`ship`、无material fixes，仅覆盖本轮UI，记录见 `startup-design-review.md`。用户反馈原生测试造成大量exec Dock临时项后，检查确认测试进程已退出且无新增Dock固定项，仅刷新当前用户Dock；登录项API测试已去掉GUI初始化，后续必要界面验收合并串行，不再反复启动裸GUI程序。Windows、真实系统撤销批准、移动应用、重新登录、正式分发及完整辅助功能继续待补；本项保持部分完成，下一增量继续 ST-109，不进入P2／P3。
 
 2026-11-07 ST-109 第二增量：Windows源码接入Task Scheduler 2.0，明确“任务计划程序”管理入口。只在用户显式开启时，为当前SID登记InteractiveToken／LeastPrivilege的单一Logon触发和当前程序Exec动作，不提权、不经shell、不要求密码；不迁移Run项或修改StartupApproved。传统Run项存在不能证明任务管理器允许状态，因此未将其冒充有效启用。方案依据[微软任务安全上下文](https://learn.microsoft.com/en-us/windows/win32/taskschd/security-contexts-for-running-tasks)、[任务XML schema](https://learn.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-schema)和[登记API](https://learn.microsoft.com/en-us/windows/win32/api/taskschd/nf-taskschd-itaskfolder-registertaskdefinition)核对；当前没有Windows编译或运行通过记录。
 
@@ -340,7 +342,7 @@ Mac当前构建通过（`startup-windows-release-build-results.txt`／`startup-w
 
 当前环境已确认缺少Windows SDK、MinGW、Qt Windows与Wine，clang Windows target探针因缺 `windows.h`／C++标准库失败；Mac arm64 Qt不可替代。独立静态复核对照Microsoft及MinGW官方接口未发现确定签名／链接缺项，但不计原生通过。用户确认目前只有Mac，Windows编译、Task Scheduler真实登记／外部禁用、移动路径、重新登录与Windows字体／辅助功能均保留待验收，不继续反复请求不存在的环境。
 
-本轮界面验证仅在Mac离屏执行；最终四图为 `.impeccable/review/offscreen/qml-startup-task-enabled-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，1100×760／800×620、DPR1，合成Windows状态并使用Mac字体，不是Windows原生截图。专门快照 **6 passed / 0 skipped**（`startup-windows-layout-results.txt`），隔离完整suite遗留的无关快捷键反馈；根代理与独立终审逐张查看，`ship`无material fixes，仅覆盖此共享界面，记录见 `.impeccable/review/startup-task-design-review.md`。共享状态结构变更后，Mac原有后台目标重新构建并仅运行 `readingDoesNotRegister`，**3 passed / 0 skipped**、13毫秒（`startup-windows-mac-readonly-results.txt`）；不登记或撤销启动项。本轮未启动Mac原生GUI或更改用户系统登记。ST-109不标全项完成；当前转向ST-110的实际工作流，P2／P3不自动开发。
+本轮界面验证仅在Mac离屏执行；最终四图为 `offscreen/qml-startup-task-enabled-{normal-light-zh,normal-dark-en,compact-light-en,compact-dark-zh}.png`，1100×760／800×620、DPR1，合成Windows状态并使用Mac字体，不是Windows原生截图。专门快照 **6 passed / 0 skipped**（`startup-windows-layout-results.txt`），隔离完整suite遗留的无关快捷键反馈；根代理与独立终审逐张查看，`ship`无material fixes，仅覆盖此共享界面，记录见 `startup-task-design-review.md`。共享状态结构变更后，Mac原有后台目标重新构建并仅运行 `readingDoesNotRegister`，**3 passed / 0 skipped**、13毫秒（`startup-windows-mac-readonly-results.txt`）；不登记或撤销启动项。本轮未启动Mac原生GUI或更改用户系统登记。ST-109不标全项完成；当前转向ST-110的实际工作流，P2／P3不自动开发。
 
 2026-11-07 ST-110 首增量：用户选择 OCR 文字校对作为首个实际 API 功能。通用偏好底部提供“API 文字校对设置…”，OCR 结果窗口按当前校对稿选择“API 校对选中文字…”或“API 校对全部文字…”。打开预览不发送，点击“发送校对”才提交固定校对指令与此次文字快照，不附图片、历史或其他上下文；本机系统 OCR 和“应用整理”继续无需密钥。显示发送范围、完整地址和模型，结果可编辑，明确应用后才一次可撤销替换；原始结果、选区外 CRLF／空白和 Unicode 字符保持，不回写图像或贴图选字框。独立审查发现未编辑返回值经 `toPlainText` 会改变 NBSP／换行，已改为保留服务 raw 文本，补直接应用／撤销回归。
 
@@ -350,7 +352,7 @@ Mac当前构建通过（`startup-windows-release-build-results.txt`／`startup-w
 
 Mac构建通过（`api-delivery-build-results.txt`）；补齐两条既有配置预览翻译后再次构建Still（`api-catalog-build-results.txt`），bundle严格签名检查通过。当前专项为客户端 **57 passed**、profile **14 passed**、API设置 **15 passed**、OCR结果 **35 passed**、原有UI **126 passed**，均无失败／跳过，日志为 `api-client-results.txt`、`api-profile-results.txt`、`api-settings-results.txt`、`ocr-result-results.txt`、`ui-results.txt`。本地 HTTP 模拟服务验证精确 snapshot、认证、真实／未知用量、重定向拒绝、空／截断／错误响应、取消／销毁及显式重试；未变化结果明确说明无需更改，不承诺新增撤销项。受限工具沙箱不允许回环监听，需允许本地端口的执行环境，不涉及真实外网 API。Mac 后台原生凭据测试 **4 passed / 0 skipped，34ms**（`api-credentials-native-unsandboxed-results.txt`），仅用独立 UUID 账户写入、替换、读取并清理，`STILL_API_CREDENTIAL_TEST=1` 显式门控；普通测试使用独立 fixture，不读用户密钥。
 
-完整相关回归最终 **6/6 通过，74.82秒**（`api-delivery-ctest-results.txt`），设置 **148 passed / 17 skipped**，跳过项为既有环境／手工门控。首轮曾在设置备份快照崩溃：新增API入口用例遗漏恢复原页面，触发后续双Application组合；补齐测试清理后原失败组合 **8 passed / 0 skipped，2.651秒**（`api-settings-isolation-results.txt`），完整suite通过。页面通知和Loader的诊断探针均已撤回，没有据此改动产品布局。翻译覆盖 **507 source / 609 catalog**、缺失及占位符错误均0（`api-translation-results.txt`）。最终图位于 `.impeccable/review/offscreen/ocr-api-{entry,before-send,preview}-*.png` 与 `api-settings-{empty,connected,error}-*.png`，覆盖中英、明暗、普通／480px紧凑布局，Mac字体、DPR1。根代理及独立终审查看后 UI `ship`、无material fixes，仅覆盖离屏显示，设计记录见 `.impeccable/review/api-proofreading-design-review.md`。本轮未启动原生 GUI、操作 Dock 或请求真实外部 API；真实远端自备密钥连通性／计费、原生窗口、Windows、60秒墙钟超时与完整辅助功能仍待验收，ST-110及P1总目标保持进行中，不进入P2／P3。
+完整相关回归最终 **6/6 通过，74.82秒**（`api-delivery-ctest-results.txt`），设置 **148 passed / 17 skipped**，跳过项为既有环境／手工门控。首轮曾在设置备份快照崩溃：新增API入口用例遗漏恢复原页面，触发后续双Application组合；补齐测试清理后原失败组合 **8 passed / 0 skipped，2.651秒**（`api-settings-isolation-results.txt`），完整suite通过。页面通知和Loader的诊断探针均已撤回，没有据此改动产品布局。翻译覆盖 **507 source / 609 catalog**、缺失及占位符错误均0（`api-translation-results.txt`）。最终图位于 `offscreen/ocr-api-{entry,before-send,preview}-*.png` 与 `api-settings-{empty,connected,error}-*.png`，覆盖中英、明暗、普通／480px紧凑布局，Mac字体、DPR1。根代理及独立终审查看后 UI `ship`、无material fixes，仅覆盖离屏显示，设计记录见 `api-proofreading-design-review.md`。本轮未启动原生 GUI、操作 Dock 或请求真实外部 API；真实远端自备密钥连通性／计费、原生窗口、Windows、60秒墙钟超时与完整辅助功能仍待验收，ST-110及P1总目标保持进行中，不进入P2／P3。
 
 
 2026-11-07 ST-110 验收补充：新增显式门控 `STILL_API_TIMEOUT_TEST=1`，使用真实60000毫秒生产定时器及持续不返回的回环服务，不缩短时限、不替换定时器。实测 **60.350秒**触发超时，**3 passed / 0 skipped**、总60.444秒（`api-timeout-native-results.txt`），覆盖仅结束一次、无可应用结果、用量未知、连接中止、无自动重试和同一客户端显式重试成功。默认门控 **2 passed / 1 skipped**、1毫秒（`api-timeout-default-gate-results.txt`）；客户端全量快测 **57 passed / 1 skipped**（`api-timeout-client-results.txt`），新增跳过仅为此60秒慢测。断言容许默认CoarseTimer提前5%的官方边界，系统忙时可稍晚；见 [Qt定时器精度](https://doc.qt.io/qt-6/qtimer.html#accuracy-and-timer-resolution)，本轮不更改生产定时器。

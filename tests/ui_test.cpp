@@ -1889,7 +1889,7 @@ private slots:
         QCOMPARE(overflow->accessibleName(), QStringLiteral("更多工具"));
     }
     void toolbarPreviewSnapshots() {
-        const QString directory = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../.impeccable/review");
+        const QString directory = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath("../output/visual");
         QVERIFY(QDir().mkpath(directory));
         const QString tag = qEnvironmentVariable("STILL_TOOLBAR_SNAPSHOT_TAG", "current");
         QImage image(900, 620, QImage::Format_ARGB32);

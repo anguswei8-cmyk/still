@@ -299,7 +299,7 @@ private slots:
         ApiTestServer service; QString error; QVERIFY(saveApiProfile({service.endpoint(), "configured-model"}, &error));
         const QString raw = QStringLiteral("会议记录 / Meeting notes\r\n识别文宇需要校对。\r\nKeep  spacing and <tags>.\r\n文字仅在点击发送后提交。");
         auto dialog = std::make_unique<OcrResultDialog>(raw); dialog->resize(size.width() > 480 ? QSize(680, 520) : QSize(480, 420)); dialog->show();
-        const QString directory = QDir(QCoreApplication::applicationDirPath()).filePath("../.impeccable/review/offscreen"); QVERIFY(QDir().mkpath(directory));
+        const QString directory = QDir(QCoreApplication::applicationDirPath()).filePath("../output/visual/offscreen"); QVERIFY(QDir().mkpath(directory));
         const QString tag = QString::fromLatin1(QTest::currentDataTag());
         QTest::qWait(20); QVERIFY(dialog->grab().save(directory + "/ocr-api-entry-" + tag + ".png"));
         button(*dialog, "OcrApiProofread")->click(); auto *api = dialog->findChild<ApiProofreadDialog *>(); QVERIFY(api); api->resize(size);
